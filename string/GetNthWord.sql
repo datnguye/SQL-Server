@@ -21,6 +21,8 @@ BEGIN
 	DECLARE @vFound INT = @Occurrence
 	DECLARE @vWord VARCHAR(8000) = @ExpressionToSearch
 	DECLARE @vEnd int
+	--
+	DECLARE @vResult VARCHAR(8000)
 
 	-- Start an infinite loop that will only end when the Nth word is found
 	WHILE 1=1
@@ -50,7 +52,13 @@ BEGIN
 		SET @vFound = @vFound - 1
 	END
 	
-	RETURN LEFT(@vWord,@vEnd - (CASE WHEN @vEnd = LEN(@vWord) THEN 0 ELSE 1 END));
+	SET @vResult = LEFT(@vWord,@vEnd - (CASE WHEN @vEnd = LEN(@vWord) THEN 0 ELSE 1 END))
+	IF LEFT(@vResult,1) = '"'
+		SET @vResult = RIGHT(@vResult, LEN(@vResult)-1)
+	IF RIGHT(@vResult,1) = '"'
+		SET @vResult = LEFT(@vResult, LEN(@vResult)-1)
+
+	RETURN @vResult;
 END
 GO
 
