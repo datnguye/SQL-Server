@@ -9,20 +9,20 @@
 IF OBJECT_ID('GetNthWord', 'FN') IS NOT NULL
 	DROP FUNCTION GetNthWord
 GO
-CREATE FUNCTION GetNthWord(	@ExpressionToSearch VARCHAR(8000), 
-							@ExpressionToFind VARCHAR(255) = ',', 
+CREATE FUNCTION GetNthWord(	@ExpressionToSearch nvarchar(max), 
+							@ExpressionToFind nvarchar(255) = ',', 
 							@Occurrence INT, 
 							@DoubleQuotesOn BIT = 0)
-RETURNS varchar(8000)
+RETURNS nvarchar(max)
 AS
 BEGIN
 
 	-- Declare variables and place-holders
 	DECLARE @vFound INT = @Occurrence
-	DECLARE @vWord VARCHAR(8000) = @ExpressionToSearch
+	DECLARE @vWord nvarchar(max) = @ExpressionToSearch
 	DECLARE @vEnd int
 	--
-	DECLARE @vResult VARCHAR(8000)
+	DECLARE @vResult nvarchar(max)
 
 	-- Start an infinite loop that will only end when the Nth word is found
 	WHILE 1=1
@@ -63,7 +63,7 @@ END
 GO
 
 /*
-	DECLARE @test varchar(8000);
+	DECLARE @test nvarchar(max);
 	SET @test = 'This,"is,a",sentence,"which,is,more",than,that'
 	SELECT dbo.GetNthWord(@test,',', 1, 1)
 	SELECT dbo.GetNthWord(@test,',', 2, 1)
