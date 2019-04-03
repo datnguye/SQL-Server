@@ -57,6 +57,8 @@ BEGIN
 		SET @vResult = RIGHT(@vResult, LEN(@vResult)-1)
 	IF RIGHT(@vResult,1) = '"'
 		SET @vResult = LEFT(@vResult, LEN(@vResult)-1)
+	IF RIGHT(@vResult,1) = @ExpressionToFind
+		SET @vResult = LEFT(@vResult, LEN(@vResult)-1)
 
 	RETURN @vResult;
 END
@@ -64,7 +66,7 @@ GO
 
 /*
 	DECLARE @test nvarchar(max);
-	SET @test = 'This,"is,a",sentence,"which,is,more",than,that'
+	SET @test = 'This,"is,a",sentence,"which,is,more",than,that,xxx'
 	SELECT dbo.GetNthWord(@test,',', 1, 1)
 	SELECT dbo.GetNthWord(@test,',', 2, 1)
 	SELECT dbo.GetNthWord(@test,',', 3, 1)
