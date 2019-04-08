@@ -27,6 +27,7 @@ BEGIN
     DECLARE @vResponse varchar(8000)
     DECLARE @vPropertyName varchar(128)
 
+	SET @Url = Replace(@Url,'%20',' ')
 	SET @vPropertyName = Case WHEN @StatusOnly = 0 THEN 'ResponseText' ELSE 'StatusText' END
 
 	--Creates an instance of WinHttp.WinHttpRequest
