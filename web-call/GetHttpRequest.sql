@@ -16,7 +16,7 @@
 -- 2019-04-08	Dave		Intial
 --======================================================
 IF OBJECT_ID('GetHttpRequest', 'FN') IS NOT NULL
-	DROP FUNCTION GetHttpRequest
+	DROP FUNCTION GetHttpRequest 
 GO
 CREATE FUNCTION GetHttpRequest(@Url varchar(8000), @StatusOnly Bit = 0)
 RETURNS varchar(8000)
