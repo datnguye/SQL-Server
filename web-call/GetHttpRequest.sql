@@ -13,7 +13,7 @@
 --
 -- History:
 -- Date			Author		Description
--- 2019-04-08	Dave		Intial
+-- 2019-04-08	DN		Intial
 --======================================================
 IF OBJECT_ID('GetHttpRequest', 'FN') IS NOT NULL
 	DROP FUNCTION GetHttpRequest
