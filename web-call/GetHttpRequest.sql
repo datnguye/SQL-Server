@@ -18,13 +18,16 @@
 IF OBJECT_ID('GetHttpRequest', 'FN') IS NOT NULL
 	DROP FUNCTION GetHttpRequest
 GO
-CREATE FUNCTION GetHttpRequest(@Url varchar(8000))
+CREATE FUNCTION GetHttpRequest(@Url varchar(8000), @StatusOnly Bit = 0)
 RETURNS varchar(8000)
 AS 
 BEGIN
     DECLARE @vWin int --token of WinHttp object
     DECLARE @vReturnCode int 
     DECLARE @vResponse varchar(8000)
+    DECLARE @vPropertyName varchar(128)
+
+	SET @vPropertyName = Case WHEN @StatusOnly = 0 THEN 'ResponseText' ELSE 'StatusText' END
 
 	--Creates an instance of WinHttp.WinHttpRequest
 	--Doc: https://docs.microsoft.com/en-us/windows/desktop/winhttp/winhttp-versions
@@ -44,7 +47,7 @@ BEGIN
 
 	--Get Response text
 	--Doc: https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-oagetproperty-transact-sql
-    EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText',@vResponse OUTPUT
+    EXEC @vReturnCode = sp_OAGetProperty @vWin,@vPropertyName,@vResponse OUTPUT
     IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin
 
 	--Dispose objects 
