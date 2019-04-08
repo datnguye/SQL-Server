@@ -22,25 +22,36 @@ CREATE FUNCTION GetHttpRequest(@Url varchar(8000))
 RETURNS varchar(8000)
 AS 
 BEGIN
-    DECLARE @vWin int 
-    DECLARE @vHttpRequest int 
+    DECLARE @vWin int --token of WinHttp object
+    DECLARE @vReturnCode int 
     DECLARE @vResponse varchar(8000)
 
-    EXEC @vHttpRequest=sp_OACreate 'WinHttp.WinHttpRequest.5.1',@vWin OUT 
-    IF @vHttpRequest <> 0 EXEC sp_OAGetErrorInfo @vWin
+	--Creates an instance of WinHttp.WinHttpRequest
+	--Doc: https://docs.microsoft.com/en-us/windows/desktop/winhttp/winhttp-versions
+	--Version of 5.0 is no longer supported
+    EXEC @vReturnCode = sp_OACreate 'WinHttp.WinHttpRequest.5.1',@vWin OUT
+    IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin
 
-    EXEC @vHttpRequest=sp_OAMethod @vWin, 'Open',NULL,'GET',@Url,'false'
-    IF @vHttpRequest <> 0 EXEC sp_OAGetErrorInfo @vWin
+	--Opens an HTTP connection to an HTTP resource.
+	--Doc: https://docs.microsoft.com/en-us/windows/desktop/winhttp/iwinhttprequest-open
+    EXEC @vReturnCode = sp_OAMethod @vWin, 'Open', NULL, 'GET'/*Method*/, @Url /*Url*/, 'false' /*IsAsync*/
+    IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin
 
-    EXEC @vHttpRequest=sp_OAMethod @vWin,'Send'
-    IF @vHttpRequest <> 0 EXEC sp_OAGetErrorInfo @vWin
+	--Sends an HTTP request to an HTTP server.
+	--Doc: https://docs.microsoft.com/en-us/windows/desktop/winhttp/iwinhttprequest-send
+    EXEC @vReturnCode = sp_OAMethod @vWin,'Send'
+    IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin
 
-    EXEC @vHttpRequest=sp_OAGetProperty @vWin,'ResponseText',@vResponse OUTPUT
-    IF @vHttpRequest <> 0 EXEC sp_OAGetErrorInfo @vWin
+	--Get Response text
+	--Doc: https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-oagetproperty-transact-sql
+    EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText',@vResponse OUTPUT
+    IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin
 
-    EXEC @vHttpRequest=sp_OADestroy @vWin 
-    IF @vHttpRequest <> 0 EXEC sp_OAGetErrorInfo @vWin 
+	--Dispose objects 
+    EXEC @vReturnCode = sp_OADestroy @vWin 
+    IF @vReturnCode <> 0 EXEC sp_OAGetErrorInfo @vWin 
 
+	--RESULT
     RETURN @vResponse
 END
 /*
