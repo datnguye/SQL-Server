@@ -1,6 +1,6 @@
 --======================================================
 -- Usage: Kill all processes connecting to current database
--- Notes:	DO NOT RUN this sproc onto Production database / USAGE of DEV and TESTING only
+-- Notes:	NOT RECOMMENDED TO RUN this sproc onto Production database / USAGE of DEV, TESTING and SETUP NEW DATABASE only
 --			Require sysadmin role
 -- History:
 -- Date			Author		Description
