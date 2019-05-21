@@ -28,7 +28,7 @@ CREATE PROCEDURE DbExec	@SQL nvarchar(max),
 						@SQLInstanceName sysname = NULL,
 						@SQLLoginName sysname = NULL,
 						@SQLPassword sysname = NULL,
-						@LiveRun bit = 0
+						@LiveRun bit = 1
 AS
 BEGIN
 	SET NOCOUNT ON;
