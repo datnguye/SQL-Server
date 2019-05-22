@@ -1,6 +1,7 @@
 /*
 
 Download source from herer: http://whoisactive.com/downloads/
+Or Get downloaded 11.32 version via who_is_active_v11_32.zip
 
 Common usages:
 + Get current proceses running
