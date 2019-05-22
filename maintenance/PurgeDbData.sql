@@ -4,7 +4,8 @@
 --			Useful for usage at the development phases
 -- Parameters:
 --			@ExcludeTablePattern: To excludes tables where name like pattern. Escape character is '\'
---			@ExcludeTables: To excludes tables where name exists. List of values splitted by comma
+--			@ExcludeTables: To exclude tables where name exists. List of values splitted by comma
+--			@IncludeTables: To include tables where name exists. List of values splitted by comma
 --			@Force: Set to 1 to bypass restrictions
 -- History:
 -- Date			Author		Description
@@ -14,6 +15,7 @@ DROP PROCEDURE IF EXISTS PurgeDbData
 GO
 CREATE PROCEDURE PurgeDbData	@ExcludeTablePattern nvarchar(256) = NULL,
 								@ExcludeTables nvarchar(MAX) = NULL,
+								@IncludeTables nvarchar(MAX) = NULL,
 								@Force bit = 0,
 								@Debug bit = 0
 AS
@@ -23,6 +25,7 @@ BEGIN
 
 	SET @vGeneralWhere = CASE WHEN @ExcludeTablePattern IS NOT NULL THEN 'AND o.name NOT LIKE '''+@ExcludeTablePattern+''' ESCAPE ''\''' ELSE '' END
 						+ CASE WHEN @ExcludeTables IS NOT NULL THEN ' AND o.name NOT IN (SELECT value FROM STRING_SPLIT('''+@ExcludeTables+''','',''))' ELSE '' END
+						+ CASE WHEN @IncludeTables IS NOT NULL THEN ' AND o.name IN (SELECT value FROM STRING_SPLIT('''+@IncludeTables+''','',''))' ELSE '' END
 						+ ' AND o.type=''U'''
 	IF @Debug = 1 PRINT @vGeneralWhere
 	SET @vIdentityWhere = @vGeneralWhere + ' AND EXISTS(SELECT TOP 1 1 FROM [sys].[columns] c WHERE c.object_id = o.id AND c.is_identity = 1)'
@@ -31,6 +34,7 @@ BEGIN
 	IF @Force = 0
 		AND @ExcludeTablePattern IS NULL
 		AND @ExcludeTables IS NULL
+		AND @IncludeTables IS NULL
 	BEGIN
 		SELECT 'Do you intend to purge all data? Use @Force = 1 to do it.' AS Error
 		RETURN -1
@@ -85,7 +89,8 @@ ROLLBACK
 --Purge data excluding somes
 BEGIN TRAN 
 	--EXEC PurgeDbData @ExcludeTablePattern = '\_%' --exclude tables where prefixed by underscore
-	EXEC PurgeDbData @ExcludeTables = 'User,Role' --exclude tables: Role, User
+	--EXEC PurgeDbData @ExcludeTables = 'User,Role' --exclude tables: Role, User
+	EXEC PurgeDbData @IncludeTables = 'User' --delete User table data
 ROLLBACK
 
 */
