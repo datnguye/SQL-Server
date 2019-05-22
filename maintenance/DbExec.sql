@@ -102,7 +102,7 @@ BEGIN
 								+(CASE WHEN @SQLLoginName IS NOT NULL THEN ' -U '+@SQLLoginName ELSE '' END) --Login Name
 								+(CASE WHEN @SQLLoginName IS NOT NULL THEN ' -P '+@SQLPassword ELSE '' END) --Password
 								+' -i "'+@SQL+'"' --input file
-								+' -o "'+Replace(@SQL,'.sql','-'+@vDBName+FORMAT(GETDATE(),'yyyyMMdd')+'.log"') --output file
+								+' -o "'+Replace(@SQL,'.sql','-'+@vDBName+FORMAT(GETDATE(),'-yyyyMMdd')+'.log"') --output file
 				IF @LiveRun = 0 PRINT @vCommand ELSE Exec xp_cmdshell @vCommand, no_output
 				Print CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'-			Output under: '+Replace(@SQL,'.sql','-'+@vDBName+FORMAT(GETDATE(),'-yyyyMMdd')+'.log"')
 			END
