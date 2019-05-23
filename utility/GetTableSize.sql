@@ -8,7 +8,7 @@
 --======================================================
 DROP PROCEDURE IF EXISTS GetTableSize
 GO
-CREATE PROCEDURE [dbo].[GetTableSize]
+CREATE PROCEDURE [dbo].[GetTableSize] @TableNamePattern varchar(256) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -26,7 +26,8 @@ BEGIN
 		AND		i.index_id = p.index_id
 	JOIN		sys.allocation_units a WITH (NOLOCK)
 		ON		p.partition_id = a.container_id
-	WHERE		t.is_ms_shipped = 0
+	WHERE		t.name LIKE @TableNamePattern ESCAPE '\'
+		AND		t.is_ms_shipped = 0
 		AND		a.total_pages > 0
 	GROUP BY	t.name,
 				p.rows
@@ -36,5 +37,7 @@ BEGIN
 END
 GO
 /*
-	EXEC GetTableSize
+	EXEC GetTableSize --get size of all tables
+	EXEC GetTableSize @TableNamePattern = 'User%' --get size of tables prefixed by 'User'
+	EXEC GetTableSize @TableNamePattern = '\_%' --get size of tables prefixed by '_'
 */
