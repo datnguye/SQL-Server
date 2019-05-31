@@ -13,5 +13,10 @@ EXEC sp_whoisactive @get_locks = 1
 + Get locks with root
 EXEC sp_whoisactive @get_locks = 1, @find_block_leaders = 1
 
++ Some cases sp_whoisactive get hang, then run command below:
+USE master
+GO
+DBCC OPENTRAN
+
 
 */
