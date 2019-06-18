@@ -1,7 +1,7 @@
 --======================================================
 -- Usage:	GetRandomString (support to generate 512 characters in maximum)
 -- Notes:	Run script to create VWRAND to have workaround usage of RAND function
---			OR: convert this to be a stored procedure
+--			OR: convert this to be a stored procedure if you'd like not to create the SQL View
 -- History:
 -- Date			Author		Description
 -- 2019-06-18	DN			Intial
