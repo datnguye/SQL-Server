@@ -1,18 +1,23 @@
 --======================================================
--- Usage: GetRandomString (support to generate 512 characters in maximum)
--- Notes: 
---
+-- Usage:	GetRandomString (support to generate 512 characters in maximum)
+-- Notes:	Run script to create VWRAND to have workaround usage of RAND function
+--			OR: convert this to be a stored procedure
 -- History:
 -- Date			Author		Description
 -- 2019-06-18	DN			Intial
 --======================================================
-DROP PROCEDURE IF EXISTS GetRandomString
+/*
+DROP VIEW IF EXISTS VWRAND
 GO
-CREATE PROCEDURE GetRandomString	@Length SmallInt = 40,
-									@IncludeUpperCase Bit = 1,
-									@IncludeLowerCase Bit = 1,
-									@IncludeNumber Bit = 1,
-									@IncludeSpecialCharacters Bit = 0
+CREATE VIEW VWRAND
+AS
+	SELECT RAND() AS RandValue
+GO
+*/
+DROP FUNCTION IF EXISTS GetRandomString
+GO
+CREATE FUNCTION GetRandomString	(@Length SmallInt = 40, @IncludeSpecialCharacters Bit = 0)
+RETURNS varchar(512)
 AS 
 BEGIN
 	DECLARE @UpperCaseLetters	varchar(26) = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -24,27 +29,26 @@ BEGIN
 	DECLARE @vSourceLettersLen Int = 95
     DECLARE @vResult varchar(512) = ''
 
-	IF @IncludeUpperCase = 1			SET @vSourceLetters += @UpperCaseLetters
-	IF @IncludeLowerCase = 1			SET @vSourceLetters += @LowerCaseLetters
-	IF @IncludeNumber = 1				SET @vSourceLetters += @NumberLetters
-	IF @IncludeSpecialCharacters = 1	SET @vSourceLetters += @SpecialLetters
+	SET @vSourceLetters += @UpperCaseLetters
+	SET @vSourceLetters += @LowerCaseLetters
+	SET @vSourceLetters += @NumberLetters
+	IF @IncludeSpecialCharacters = 1 SET @vSourceLetters += @SpecialLetters
 
 	SET @vSourceLettersLen = LEN(@vSourceLetters)
-	PRINT @vSourceLetters
 
 	WHILE LEN(@vResult) < @Length
 	BEGIN
-		SET @vResult = @vResult + SUBSTRING(@vSourceLetters, (ABS(CHECKSUM(NEWID()))%@vSourceLettersLen)+1, 1)
+		SET @vResult = @vResult + SUBSTRING(@vSourceLetters, (ABS(CHECKSUM((SELECT RandValue FROM VWRAND)))%@vSourceLettersLen)+1, 1)
 	END
 
 	--RESULT
-    SELECT @vResult
+    RETURN @vResult
 END
 /*
-EXEC dbo.GetRandomString @Length = -1
-EXEC dbo.GetRandomString @Length = 0
-EXEC dbo.GetRandomString @Length = 10
-EXEC dbo.GetRandomString @Length = 512
-EXEC dbo.GetRandomString @Length = 512, @IncludeSpecialCharacters = 1
-EXEC dbo.GetRandomString @Length = 40, @IncludeSpecialCharacters = 1
+SELECT dbo.GetRandomString(-1 ,0)
+SELECT dbo.GetRandomString(0  ,0)
+SELECT dbo.GetRandomString(10 ,0)
+SELECT dbo.GetRandomString(512,0)
+SELECT dbo.GetRandomString(512,1) 
+SELECT dbo.GetRandomString(40 ,1) 
 */
