@@ -4,7 +4,7 @@
 --			OR: convert this to be a stored procedure if you'd like not to create the SQL View
 -- History:
 -- Date			Author		Description
--- 2019-06-18	DN			Intial
+-- 2019-06-19	DN			Intial
 --======================================================
 /*
 DROP VIEW IF EXISTS VWRAND
