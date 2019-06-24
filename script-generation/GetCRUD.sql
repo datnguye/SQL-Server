@@ -1,7 +1,7 @@
 --==================================================================
 -- Usage: GetCRUD - to get script for SELECT/INSERT/UPDATE/DELETE
--- Dependencies:	Table function dbo.GetPKColumns
---					Scarlar function dbo.IsIdentityColumn
+-- Dependencies:	Table function 		\utiliy\GetPKColumns
+--					Scarlar function 	\utiliy\IsIdentityColumn
 -- Notes:			Since SQL Server 2016+
 -- Parameters:
 -- History:
