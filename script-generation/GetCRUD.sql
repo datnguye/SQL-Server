@@ -1,5 +1,5 @@
---==================================================================
--- Usage: GetCRUD - to get script for SELECT/INSERT/UPDATE/DELETE
+--======================================================================================================
+-- Usage: GetCRUD - to get script for SELECT/INSERT/UPDATE/DELETE, and export to file using BCP command
 -- Dependencies:	Table function 		\utiliy\GetPKColumns
 --					Scarlar function 	\utiliy\IsIdentityColumn
 -- Notes:			Since SQL Server 2016+
@@ -7,7 +7,7 @@
 -- History:
 -- Date			Author		Description
 -- 2019-06-24	DN			Intial
---==================================================================
+--=======================================================================================================
 /* 
 --------------------------------------------------------------------------------
 						Supported table designs
@@ -58,12 +58,20 @@ DROP PROCEDURE IF EXISTS GetCRUD
 GO
 CREATE PROCEDURE GetCRUD	@Schema sysname = 'dbo',
 							@Table sysname,
-							@ExportTo nvarchar(256) = NULL--'C:\Temp\'
+							@ExportTo nvarchar(256) = NULL,--'C:\Temp\',
+							@IsActiveFieldName varchar(128) = 'IsActive',
+							@CreateByFieldName varchar(128) = 'CreateBy',
+							@UpdateByFieldName varchar(128) = 'UpdateBy',
+							@UpdateAtFieldName varchar(128) = 'UpdateAt',
+							@OverriddenServerName varchar(256) = NULL,
+							@OverriddenUserName varchar(256) = NULL,
+							@OverriddenPwd varchar(256) = NULL
 AS
 BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @vExportFullPath nvarchar(256)
+	DECLARE @vBCPCommand nvarchar(512)
 	--
 	DECLARE @tResult TABLE
 	(
@@ -74,11 +82,11 @@ BEGIN
 	)
 	--	
 	DECLARE @SelectTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_SELECT{endline}GO{endline}CREATE PROCEDURE {table}_SELECT {param_pk_columns_with_data_type}{endline}AS{endline}BEGIN{endline}{tab}SELECT{tab}{columns}{endline}{tab}FROM{tab}{table}{endline}{tab}WHERE{tab}{pk_columns_equal_param_pk_columns}{endline}END{endline}GO{endline}'
-	DECLARE @InsertTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_INSERT{endline}GO{endline}CREATE PROCEDURE {table}_INSERT {param_non_identity_columns_with_data_type}, @CreateBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}INSERT{endline}{tab}INTO{tab}{table}{endline}{tab}({endline}{tab}{tab}{non_identity_columns},{endline}{tab}{tab}CREATE_BY,{endline}{tab}{tab}UPDATE_BY{endline}{tab}){endline}{tab}VALUES{endline}{tab}({endline}{tab}{tab}{param_non_identity_columns},{endline}{tab}{tab}@CreateBy,{endline}{tab}{tab}@CreateBy{endline}{tab}){endline}{tab}{endline}{tab}{scope_identity}{endline}END{endline}GO{endline}'
-	DECLARE @UpdateTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_UPDATE{endline}GO{endline}CREATE PROCEDURE {table}_UPDATE{tab}{param_columns_with_data_type}, @UpdateBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}UPDATE{tab}{table}{endline}{tab}SET {tab}{columns_equal_param_columns},{endline}{tab}{tab}{tab}UPDATE_BY = @UpdateBy,{endline}{tab}{tab}{tab}UPDATE_DATE = GETDATE(){endline}{tab}WHERE{tab}{pk_columns_equal_param_pk_columns}{endline}END{endline}GO{endline}'
-	DECLARE @DeleteTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_DELETE{endline}GO{endline}CREATE PROCEDURE {table}_DELETE{tab}{param_pk_columns_with_data_type}, @DeleteBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}UPDATE{tab}{table}{endline}{tab}SET {tab}IS_ACTIVE = 0,{endline}{tab}{tab}{tab}UPDATE_BY = @DeleteBy{endline}{tab}{tab}{tab}UPDATE_DATE = GETDATE(){endline}{tab}WHERE{tab}{pk_columns_equal_param_pk_columns}{endline}END{endline}GO{endline}'
+	DECLARE @InsertTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_INSERT{endline}GO{endline}CREATE PROCEDURE {table}_INSERT {param_non_identity_columns_with_data_type}, @CreateBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}INSERT{endline}{tab}INTO{tab}{table}{endline}{tab}({endline}{tab}{tab}{non_identity_columns},{endline}{tab}{tab}{create_by_field_name},{endline}{tab}{tab}{update_by_field_name}{endline}{tab}){endline}{tab}VALUES{endline}{tab}({endline}{tab}{tab}{param_non_identity_columns},{endline}{tab}{tab}@CreateBy,{endline}{tab}{tab}@CreateBy{endline}{tab}){endline}{tab}{endline}{tab}{scope_identity}{endline}END{endline}GO{endline}'
+	DECLARE @UpdateTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_UPDATE{endline}GO{endline}CREATE PROCEDURE {table}_UPDATE{tab}{param_columns_with_data_type}, @UpdateBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}UPDATE{tab}{table}{endline}{tab}SET {tab}{columns_equal_param_columns},{endline}{tab}{tab}{tab}{update_by_field_name} = @UpdateBy,{endline}{tab}{tab}{tab}{update_at_field_name} = GETDATE(){endline}{tab}WHERE{tab}{pk_columns_equal_param_pk_columns}{endline}END{endline}GO{endline}'
+	DECLARE @DeleteTemplate varchar(4000) = 'DROP PROCEDURE IF EXISTS {table}_DELETE{endline}GO{endline}CREATE PROCEDURE {table}_DELETE{tab}{param_pk_columns_with_data_type}, @DeleteBy NVARCHAR(256){endline}AS{endline}BEGIN{endline}{tab}UPDATE{tab}{table}{endline}{tab}SET {tab}{is_active_field_name} = 0,{endline}{tab}{tab}{tab}{update_by_field_name} = @DeleteBy,{endline}{tab}{tab}{tab}{update_at_field_name} = GETDATE(){endline}{tab}WHERE{tab}{pk_columns_equal_param_pk_columns}{endline}END{endline}GO{endline}'
 
-	SET @SelectTemplate = REPLACE(REPLACE(REPLACE(@SelectTemplate,'{table}',@Table),'{endline}',char(10)),'{tab}',char(9))
+	SET @SelectTemplate = REPLACE(REPLACE(REPLACE(@SelectTemplate,'{table}',UPPER(@Table)),'{endline}',char(10)),'{tab}',char(9))
 	/*
 		DROP PROCEDURE IF EXISTS YOUR_TABLE_SELECT
 		GO
@@ -91,7 +99,7 @@ BEGIN
 		END
 		GO
 	*/
-	SET @InsertTemplate = REPLACE(REPLACE(REPLACE(@InsertTemplate,'{table}',@Table),'{endline}',char(10)),'{tab}',char(9))
+	SET @InsertTemplate = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@InsertTemplate,'{table}',UPPER(@Table)),'{endline}',char(10)),'{tab}',char(9)), '{create_by_field_name}', @CreateByFieldName),'{update_by_field_name}',@UpdateByFieldName)
 	/*
 		DROP PROCEDURE IF EXISTS YOUR_TABLE_INSERT
 		GO
@@ -102,19 +110,19 @@ BEGIN
 			INTO	YOUR_TABLE
 			(
 				{non_identity_columns},
-				CREATE_BY,
-				UPDATE_BY
+				CreateBy,
+				UpdateBy
 			)
 			VALUES
 			(
 				{param_non_identity_columns},
-				CREATE_BY = @CreateBy,
-				UPDATE_BY = @CreateBy
+				CreateBy = @CreateBy,
+				UpdateBy = @CreateBy
 			)
 		END
 		GO
 	*/
-	SET @UpdateTemplate = REPLACE(REPLACE(REPLACE(@UpdateTemplate,'{table}',@Table),'{endline}',char(10)),'{tab}',char(9))
+	SET @UpdateTemplate = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@UpdateTemplate,'{table}',UPPER(@Table)),'{endline}',char(10)),'{tab}',char(9)),'{update_by_field_name}',@UpdateByFieldName),'{update_at_field_name}',@UpdateAtFieldName)
 	/*
 		DROP PROCEDURE IF EXISTS YOUR_TABLE_UPDATE
 		GO
@@ -123,13 +131,13 @@ BEGIN
 		BEGIN
 			UPDATE	YOUR_TABLE
 			SET 	{columns_equal_param_columns},
-					UPDATE_BY = @UpdateBy,
-					UPDATE_DATE = GETDATE()
+					UpdateBy = @UpdateBy,
+					UpdateAt = GETDATE()
 			WHERE	{pk_columns_equal_param_pk_columns}
 		END
 		GO
 	*/
-	SET @DeleteTemplate = REPLACE(REPLACE(REPLACE(@DeleteTemplate,'{table}',@Table),'{endline}',char(10)),'{tab}',char(9))
+	SET @DeleteTemplate = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@DeleteTemplate,'{table}',UPPER(@Table)),'{endline}',char(10)),'{tab}',char(9)), '{is_active_field_name}', @IsActiveFieldName),'{update_by_field_name}',@UpdateByFieldName),'{update_at_field_name}',@UpdateAtFieldName)
 	/*
 		DROP PROCEDURE IF EXISTS YOUR_TABLE_DELETE
 		GO
@@ -137,9 +145,9 @@ BEGIN
 		AS
 		BEGIN
 			UPDATE	YOUR_TABLE
-			SET 	IS_ACTIVE = 0,
-					UPDATE_BY = @DeleteBy
-					UPDATE_DATE = GETDATE()
+			SET 	IsActive = 0,
+					UpdateBy = @DeleteBy
+					UpdateAt = GETDATE()
 			WHERE	{pk_columns_equal_param_pk_columns}
 		END
 		GO
@@ -160,17 +168,17 @@ BEGIN
 					ELSE C.DATA_TYPE
 				END as DATA_TYPE,
 				C.ORDINAL_POSITION,
-				dbo.IsIdentityColumn(@Schema,@Table,C.COLUMN_NAME) AS IS_IDENTITY,
+				dbo.IsIdentityColumn(@Schema,UPPER(@Table),C.COLUMN_NAME) AS IS_IDENTITY,
 				CASE WHEN PC.ColumnName IS NULL THEN 0 ELSE 1 END IS_IN_PK,
 				PC.ColumnOrder AS PK_ORDINAL_POSITION
 	INTO		#tColumns
 	FROM		INFORMATION_SCHEMA.COLUMNS C
-	LEFT JOIN	dbo.GetPKColumns(@Schema,@Table) PC 
+	LEFT JOIN	dbo.GetPKColumns(@Schema,UPPER(@Table)) PC 
 		ON		PC.TableSchema = C.TABLE_SCHEMA
 		AND		PC.TableName = C.TABLE_NAME
 		AND		PC.ColumnName = C.COLUMN_NAME
 	WHERE		C.TABLE_SCHEMA = @Schema
-		AND		C.TABLE_NAME = @Table
+		AND		C.TABLE_NAME = UPPER(@Table)
 	PRINT 'Insert into #tColumns with @@ROWCOUNT = '+CONVERT(varchar,@@ROWCOUNT)
 
 	/*
@@ -182,9 +190,9 @@ BEGIN
 				--SELECT,DELETE usage
 				STRING_AGG(CASE WHEN IS_IN_PK = 1 THEN '@' + REPLACE(COLUMN_NAME,'_','') + ' ' + DATA_TYPE END,',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [param_pk_columns_with_data_type],
 				--UPDATE,DELETE usage
-				STRING_AGG(CASE WHEN IS_IN_PK = 1 THEN COLUMN_NAME + ' = @' + REPLACE(COLUMN_NAME,'_','') END,',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [pk_columns_equal_param_pk_columns],
+				STRING_AGG(CASE WHEN IS_IN_PK = 1 THEN COLUMN_NAME + ' = @' + REPLACE(COLUMN_NAME,'_','') END,' AND ') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [pk_columns_equal_param_pk_columns],
 				--SELECT usage
-				STRING_AGG(CASE WHEN IS_IN_PK = 1 THEN COLUMN_NAME + ' = COALESCE(@' + REPLACE(COLUMN_NAME,'_','')+','+COLUMN_NAME+')' END,',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [pk_columns_equal_param_pk_columns_select],
+				STRING_AGG(CASE WHEN IS_IN_PK = 1 THEN COLUMN_NAME + ' = COALESCE(@' + REPLACE(COLUMN_NAME,'_','')+','+COLUMN_NAME+')' END,' AND ') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [pk_columns_equal_param_pk_columns_select],
 				--INSERT usage
 				STRING_AGG(CASE WHEN IS_IDENTITY = 0 THEN '@' + REPLACE(COLUMN_NAME,'_','') + ' ' + DATA_TYPE END,',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [param_non_identity_columns_with_data_type],
 				STRING_AGG(CASE WHEN IS_IDENTITY = 0 THEN COLUMN_NAME END,',') WITHIN GROUP (ORDER BY ORDINAL_POSITION) AS [non_identity_columns],
@@ -252,18 +260,89 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		SET @vExportFullPath = TRIM(@ExportTo) + CASE WHEN RIGHT(TRIM(@ExportTo),1) <> '\' THEN '\' ELSE '' END + @Table + '.sql'
-		--TO BE CONTINUED...
+		SET @vExportFullPath = TRIM(@ExportTo) + CASE WHEN RIGHT(TRIM(@ExportTo),1) <> '\' THEN '\' ELSE '' END + UPPER(@Table) + '.sql'
+		--Sqlcmd -S "DAVE\DAVE140" -d "SYSDB" -U "sa" -P "123" -Q "SELECT * FROM @tResult" -o "C:\TEMP\text.sql"
 
-		PRINT '(TO BE CONTINUED...)Exported to: '+@vExportFullPath
+		DROP TABLE IF EXISTS ##tResult
+		SELECT	TABLE_SELECT+char(10)+TABLE_INSERT+char(10)+TABLE_UPDATE+char(10)+TABLE_DELETE AS [--CONTENT]
+		INTO	##tResult
+		FROM	@tResult
+
+		SET @vBCPCommand = 'bcp "SELECT [--CONTENT] FROM ##tResult" QUERYOUT "' + @vExportFullPath + '" -w '+COALESCE('-U "'+@OverriddenUserName+'" -P "'+@OverriddenPwd+'"','-T')+' -S "' + COALESCE(@OverriddenServerName,@@SERVERNAME) + '"'
+		PRINT 'BCP Command: '+@vBCPCommand
+
+		EXEC master..xp_cmdshell @vBCPCommand, no_output
+		PRINT 'Exported to: '+@vExportFullPath
 	END
-
 
 	RETURN
 END
 
 /*
+--Test case 1
+	DROP TABLE IF EXISTS Base01
+	GO
+	CREATE TABLE Base01
+	(
+		Id INT NOT NULL IDENTITY(1,1) CONSTRAINT PK_Base01 PRIMARY KEY,
+		IsActive BIT NOT NULL CONSTRAINT DF_Base01_IsActive DEFAULT(1),
+		Col1 decimal(19,4) NOT NULL,
+		Col2 int,
+		Col3 xml,
+		CreateBy NVARCHAR(256) NOT NULL,
+		CreateAt DATETIME NOT NULL CONSTRAINT DF_Base01_CreateAt DEFAULT(GETDATE()),
+		UpdateBy NVARCHAR(256) NOT NULL,
+		UpdateAt DATETIME NOT NULL CONSTRAINT DF_Base01_UpdateAt DEFAULT(GETDATE())
+	)
+	GO
 	EXEC GetCRUD @Table = 'Base01'
-	EXEC GetCRUD @Table = 'Base02'
-	EXEC GetCRUD @Table = 'Base03'
+	GO
+
+--Test case 2
+	DROP TABLE IF EXISTS Base01
+	GO
+	CREATE TABLE Base01
+	(
+		Code INT NOT NULL CONSTRAINT PK_Base01 PRIMARY KEY,
+		IsActive BIT NOT NULL CONSTRAINT DF_Base01_IsActive DEFAULT(1),
+		Col1 decimal(19,4) NOT NULL,
+		Col2 int,
+		Col3 xml,
+		CreateBy NVARCHAR(256) NOT NULL,
+		CreateAt DATETIME NOT NULL CONSTRAINT DF_Base01_CreateAt DEFAULT(GETDATE()),
+		UpdateBy NVARCHAR(256) NOT NULL,
+		UpdateAt DATETIME NOT NULL CONSTRAINT DF_Base01_UpdateAt DEFAULT(GETDATE())
+	)
+	GO
+	EXEC GetCRUD @Table = 'Base01'
+	GO
+
+--Test case 3
+	DROP TABLE IF EXISTS Base01
+	GO
+	CREATE TABLE Base01
+	(
+		Code1 INT NOT NULL,
+		Code2 INT NOT NULL,
+		IsActive BIT NOT NULL CONSTRAINT DF_Base01_IsActive DEFAULT(1),
+		Col1 decimal(19,4) NOT NULL,
+		Col2 int,
+		Col3 xml,
+		CreateBy NVARCHAR(256) NOT NULL,
+		CreateAt DATETIME NOT NULL CONSTRAINT DF_Base01_CreateAt DEFAULT(GETDATE()),
+		UpdateBy NVARCHAR(256) NOT NULL,
+		UpdateAt DATETIME NOT NULL CONSTRAINT DF_Base01_UpdateAt DEFAULT(GETDATE()),
+		CONSTRAINT PK_Base01 PRIMARY KEY (Code1,Code2)
+	)
+	GO
+	EXEC GetCRUD @Table = 'Base01'
+	GO
+
+--Test case 4
+	EXEC GetCRUD	@Table = 'Base01', 
+					@ExportTo = 'C:\Temp', 
+					@OverriddenServerName = 'DAVE\DAVE140',
+					@OverriddenUserName = 'sa',
+					@OverriddenPwd = '123'
+	GO
 */
