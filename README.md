@@ -11,7 +11,7 @@ STRUCTURE - Updated 2019-Jul-01
 Reference - Tree Command: tree "folder_path" /F
 
 │   README.md
-│
+
 ├───audit
 │       DatabaseSchemaAudit.sql
 │
