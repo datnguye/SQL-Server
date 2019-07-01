@@ -9,47 +9,38 @@ In case that you'd have requests for me to do something, feel free to send it vi
 --------------------------------------------
 
 ## STRUCTURE - Updated 2019-Jul-01
-
 Reference - Tree Command: tree "folder_path" /F
 
-### README.md
-
-### audit
+#### README.md
+	Basic repo information
+#### audit
     DatabaseSchemaAudit.sql
-
-### maintenance
+#### maintenance
 	DbExec.sql
 	KillAllDatabaseProcesses.sql
 	MaintenanceDBBackup.sql
 	PurgeDbData.sql
 	sp_whoisactive.sql
 	who_is_active_v11_32.zip
-		
-###	maintenance\batch
+####	maintenance\batch
 	run-MaintenanceDBBackup.bat
-
-### operator
+#### operator
 	Div.sql
-
-### query-store
+#### query-store
     DoQueryStore.sql
-
-### script-generation
+#### script-generation
     GetCRUD.sql
     GetInsert.sql
-
-### string
+#### string
     CharIndexWithQuotes.sql
     GetNthWord.sql
     GetRandomString.sql
     SplitString.sql
-
-### utility
+#### utility
     GetCalendar.sql
     GetPKColumns.sql
     GetTableSize.sql
     IsIdentityColumn.sql
     Script-FakeDataGeneration.sql
-
 ## web-call
 	GetHttpRequest.sql
