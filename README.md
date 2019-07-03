@@ -7,7 +7,6 @@ In case that you'd have requests for me to do something, feel free to send it vi
 
 
 --------------------------------------------
-
 ## STRUCTURE - Updated 2019-Jul-01
 Reference - Tree Command: tree "folder_path" /F
 
@@ -16,13 +15,14 @@ Reference - Tree Command: tree "folder_path" /F
 #### audit
     DatabaseSchemaAudit.sql
 #### maintenance
+	CreateReaderDBU.sql
 	DbExec.sql
 	KillAllDatabaseProcesses.sql
 	MaintenanceDBBackup.sql
 	PurgeDbData.sql
 	sp_whoisactive.sql
 	who_is_active_v11_32.zip
-####	maintenance\batch
+#### maintenance\batch
 	run-MaintenanceDBBackup.bat
 #### operator
 	Div.sql
@@ -42,5 +42,5 @@ Reference - Tree Command: tree "folder_path" /F
     GetTableSize.sql
     IsIdentityColumn.sql
     Script-FakeDataGeneration.sql
-## web-call
+#### web-call
 	GetHttpRequest.sql
