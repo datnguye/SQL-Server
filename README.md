@@ -42,5 +42,6 @@ Reference - Tree Command: tree "folder_path" /F
     GetTableSize.sql
     IsIdentityColumn.sql
     Script-FakeDataGeneration.sql
+	GetHierachicalTables.sql
 #### web-call
 	GetHttpRequest.sql

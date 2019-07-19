@@ -19,12 +19,12 @@ IF OBJECT_ID('GetHttpRequest', 'FN') IS NOT NULL
 	DROP FUNCTION GetHttpRequest 
 GO
 CREATE FUNCTION GetHttpRequest(@Url varchar(8000), @StatusOnly Bit = 0)
-RETURNS varchar(8000)
+RETURNS nvarchar(max)
 AS 
 BEGIN
     DECLARE @vWin int --token of WinHttp object
     DECLARE @vReturnCode int 
-    DECLARE @vResponse varchar(8000)
+    DECLARE @vResponse nvarchar(max)
     DECLARE @vPropertyName varchar(128)
 
 	SET @Url = Replace(@Url,'%20',' ')
@@ -59,5 +59,5 @@ BEGIN
     RETURN @vResponse
 END
 /*
-select dbo.GetHttpRequest('http://example.com/')
+select dbo.GetHttpRequest('http://example.com/',0)
 */

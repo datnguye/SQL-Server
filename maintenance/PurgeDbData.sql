@@ -83,7 +83,7 @@ GO
 /*
 --Purge all data
 BEGIN TRAN 
-	EXEC PurgeDbData --@Debug = 1 
+	EXEC PurgeDbData @Debug = 1, @Force = 1
 ROLLBACK
 
 --Purge data excluding somes
