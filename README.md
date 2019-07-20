@@ -32,6 +32,7 @@ Reference - Tree Command: tree "folder_path" /F
     GetCRUD.sql
     GetInsert.sql
 #### string
+	ReplaceManyToSingle.sql
     CharIndexWithQuotes.sql
     GetNthWord.sql
     GetRandomString.sql
