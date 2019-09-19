@@ -1,7 +1,7 @@
 --======================================================
 -- Usage: GetFakeJson - to get fake data in json format
 -- Dependencies: 
---			Function utility/GetRandomString
+--			Function string/GetRandomString
 --			Function utility/GetRandomNumber
 --			Function utility/GetRandomDate
 --			Function utility/GetRandomBit
