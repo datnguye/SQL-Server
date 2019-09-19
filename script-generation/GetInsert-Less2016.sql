@@ -88,11 +88,11 @@ BEGIN
 
 	IF @TableSchema IS NULL
 	BEGIN
-		SET @vStartInsert = 'INSERT INTO ' + '[' + TRIM(@TableName) + ']'
+		SET @vStartInsert = 'INSERT INTO ' + '[' + RTRIM(@TableName) + ']'
 	END
 	ELSE
 	BEGIN
-		SET @vStartInsert = 'INSERT INTO ' + '[' + TRIM(TRIM(@TableSchema)) + '].' + '[' + TRIM(@TableName) + ']'
+		SET @vStartInsert = 'INSERT INTO ' + '[' + RTRIM(RTRIM(@TableSchema)) + '].' + '[' + RTRIM(@TableName) + ']'
 	END
 
 	--To get the first column's ID
@@ -172,8 +172,8 @@ BEGIN
 				WHEN @vDataType IN ( 'image' ) 
 					THEN 'CASE WHEN ' + @vColumnName + ' IS NULL THEN ''NULL'' ELSE ''0x0'' END'
 				WHEN @vDataType IN ( 'float', 'real', 'money', 'smallmoney' ) 
-					THEN 'COALESCE(TRIM(RTRIM(' + 'CONVERT(char, ' + @vColumnName + ',2)' + ')),''NULL'')'
-				ELSE 'COALESCE(TRIM(RTRIM(' + 'CONVERT(nvarchar(max), ' + @vColumnName + ')' + ')),''NULL'')'
+					THEN 'COALESCE(RTRIM(RTRIM(' + 'CONVERT(char, ' + @vColumnName + ',2)' + ')),''NULL'')'
+				ELSE 'COALESCE(RTRIM(RTRIM(' + 'CONVERT(nvarchar(max), ' + @vColumnName + ')' + ')),''NULL'')'
 			END + '+'',''+'
 
 		--Generating the column name list for the INSERT statement
@@ -192,7 +192,7 @@ BEGIN
 	SET @vColumnList = LEFT(@vColumnList, LEN(@vColumnList) - 1)
 	SET @vValueList = LEFT(@vValueList, LEN(@vValueList) - 5)
 
-	IF TRIM(@vColumnList) = ''
+	IF RTRIM(@vColumnList) = ''
 	BEGIN
 		RAISERROR('No columns to select. There should at least be one column to generate the output',16,1)
 		RETURN -1
@@ -205,7 +205,7 @@ BEGIN
 		--IF NOT EXISTS (SELECT TOP 1 1 FROM Table WHERE ?) INSERT INTO Table (column1,column2,column3) VALUES (value1,value2,value3)
 		IF (SELECT Count(*) FROM @vPrimaryKeyList) > 0
 		BEGIN
-			SET @vValueListTemp = 'IF NOT EXISTS (SELECT TOP 1 1 FROM ' + COALESCE('[' + TRIM(TRIM(@TableSchema)) + '].','') + '[' + TRIM(@TableName) + '] WHERE ';
+			SET @vValueListTemp = 'IF NOT EXISTS (SELECT TOP 1 1 FROM ' + COALESCE('[' + RTRIM(RTRIM(@TableSchema)) + '].','') + '[' + RTRIM(@TableName) + '] WHERE ';
 			
 			SET @vPrimaryKeys = ''
 			;WITH CTE AS 
@@ -221,24 +221,24 @@ BEGIN
 			SELECT @vValueListTemp += @vPrimaryKeys + ') '
 		END
 
-		SET @vValueList	= 'SELECT ' + (CASE WHEN @Top IS NULL OR @Top < 0 THEN '' ELSE ' TOP ' + TRIM(STR(@Top)) + ' ' END) + '''' 
+		SET @vValueList	= 'SELECT ' + (CASE WHEN @Top IS NULL OR @Top < 0 THEN '' ELSE ' TOP ' + RTRIM(STR(@Top)) + ' ' END) + '''' 
 									+ COALESCE(@vValueListTemp,'')
-									+ TRIM(@vStartInsert) + ' ''+' + '''(' + TRIM(@vColumnList) + '''+' + ''')''' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
-						+ ' FROM ' + COALESCE('[' + TRIM(TRIM(@TableSchema)) + '].','') + '[' + TRIM(@TableName) + ']' + '(NOLOCK)' 
+									+ RTRIM(@vStartInsert) + ' ''+' + '''(' + RTRIM(@vColumnList) + '''+' + ''')''' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
+						+ ' FROM ' + COALESCE('[' + RTRIM(RTRIM(@TableSchema)) + '].','') + '[' + RTRIM(@TableName) + ']' + '(NOLOCK)' 
 						+ COALESCE(' WHERE ' + @Where, '')
 
-		--SET @vValueListBlank = COALESCE(@vValueListTemp,'') + TRIM(@vStartInsert) + ' ''+' + '''(' + TRIM(@vColumnList) + '''+' + ''')''' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
+		--SET @vValueListBlank = COALESCE(@vValueListTemp,'') + RTRIM(@vStartInsert) + ' ''+' + '''(' + RTRIM(@vColumnList) + '''+' + ''')''' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
 	END
 	ELSE IF @IncludeColumnList = 0
 	BEGIN
 		--Format:
 		--INSERT INTO Table VALUES(value1,value2,value3)
-		SET @vValueList = 'SELECT ' + (CASE WHEN @Top IS NULL OR @Top < 0 THEN '' ELSE ' TOP ' + TRIM(STR(@Top)) + ' ' END) + ''''	
-									+ TRIM(@vStartInsert) + ' '' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
-						+ ' FROM ' + COALESCE('[' + TRIM(TRIM(@TableSchema)) + '].','') + '[' + TRIM(@TableName) + ']' + '(NOLOCK)' 
+		SET @vValueList = 'SELECT ' + (CASE WHEN @Top IS NULL OR @Top < 0 THEN '' ELSE ' TOP ' + RTRIM(STR(@Top)) + ' ' END) + ''''	
+									+ RTRIM(@vStartInsert) + ' '' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
+						+ ' FROM ' + COALESCE('[' + RTRIM(RTRIM(@TableSchema)) + '].','') + '[' + RTRIM(@TableName) + ']' + '(NOLOCK)' 
 						+ COALESCE(' WHERE ' + @Where, '')
 
-		--SET @vValueListBlank = TRIM(@vStartInsert) + ' ''+' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
+		--SET @vValueListBlank = RTRIM(@vStartInsert) + ' ''+' + ' +''VALUES(''+ ' + @vValueList + '+'')''' + ' ' 
 	END
 
 
