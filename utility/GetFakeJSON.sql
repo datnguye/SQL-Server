@@ -4,7 +4,6 @@
 --			Function string/GetRandomString
 --			Function utility/GetRandomNumber
 --			Function utility/GetRandomDate
---			Function utility/GetRandomBit
 -- Notes: From SQL 2016
 -- Parameters:
 -- History:
