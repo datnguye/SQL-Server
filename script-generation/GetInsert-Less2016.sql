@@ -1,6 +1,6 @@
 --======================================================
 -- Usage: GetInsert - to get (additional) INSERT scipt from a table
--- Notes: Ealier to SQL 2016
+-- Notes: Ealier to SQL 2016. This is required customized function: dbo.StringSplit & dbo.Trim
 -- Parameters:
 --		@TableName:					The table/view for which the INSERT statements will be generated using the existing data
 --		@TableSchema:				Use this if your table schema is not a default one
