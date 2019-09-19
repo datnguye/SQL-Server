@@ -35,6 +35,7 @@ BEGIN
 	DECLARE @vFieldName nvarchar(255)
 	DECLARE @vFieldType nvarchar(255)
 	DECLARE @vFieldTypeCalculated nvarchar(255)
+	DECLARE @vLoop INT = 1
 
 	INSERT INTO @vFields SELECT ROW_NUMBER() OVER (ORDER BY GETDATE()), VALUE FROM STRING_SPLIT(@Fields, ',')
 	INSERT INTO @vTypes SELECT ROW_NUMBER() OVER (ORDER BY GETDATE()), VALUE FROM STRING_SPLIT(@FieldTypes, ',')
@@ -76,7 +77,11 @@ BEGIN
 	--INSERT fake data
 	IF @Debug = 1 PRINT @vInsertSQL
 	SET @vInsertSQL = LEFT(@vInsertSQL, LEN(@vInsertSQL)-1)
-	EXEC(@vInsertSQL)
+	WHILE @vLoop < @NoRecord
+	BEGIN
+		EXEC(@vInsertSQL)
+		SET @vLoop = @vLoop + 1
+	END
 
 	--REMOVE dummy column
 	ALTER TABLE ##tResult DROP COLUMN dummy;
