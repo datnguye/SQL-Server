@@ -14,6 +14,7 @@ DROP PROCEDURE IF EXISTS GetFakeJson
 GO
 CREATE PROCEDURE GetFakeJson	@Fields nvarchar(max) /*'Field1, Field2, Field3, Field4'*/,
 								@FieldTypes nvarchar(max) /*'Number, String, Date, Bit'*/,
+								@FieldLengths nvarchar(max) = NULL /*'null, 10, null, null' --null used for other type than string*/,
 								@NoRecord INT = 10,
 								@Debug BIT = 0
 AS
@@ -24,20 +25,23 @@ BEGIN
 	CREATE TABLE ##tResult (dummy BIT)
 
 	--Constants
-	DECLARE @DefaultStringLength INT = 255
+	DECLARE @DefaultStringLength varchar = '10'
 
 	--Variables
 	DECLARE @vSQL nvarchar(max)
 	DECLARE @vInsertSQL nvarchar(max)
 	DECLARE @vFields TABLE (Idx INT, Name nvarchar(255))
 	DECLARE @vTypes TABLE (Idx INT, Name nvarchar(255))
+	DECLARE @vLengths TABLE (Idx INT, Name nvarchar(255))
 	DECLARE @vFieldName nvarchar(255)
 	DECLARE @vFieldType nvarchar(255)
+	DECLARE @vFieldLength INT
 	DECLARE @vFieldTypeCalculated nvarchar(255)
 	DECLARE @vLoop INT = 1
 
 	INSERT INTO @vFields SELECT ROW_NUMBER() OVER (ORDER BY GETDATE()), VALUE FROM STRING_SPLIT(@Fields, ',')
 	INSERT INTO @vTypes SELECT ROW_NUMBER() OVER (ORDER BY GETDATE()), VALUE FROM STRING_SPLIT(@FieldTypes, ',')
+	INSERT INTO @vLengths SELECT ROW_NUMBER() OVER (ORDER BY GETDATE()), VALUE FROM STRING_SPLIT(@FieldLengths, ',')
 
 	--CREATE table containing fake data
 	SET @vInsertSQL = 'INSERT INTO ##tResult (' + @Fields + ') SELECT '
@@ -49,13 +53,16 @@ BEGIN
 						WHEN 'Number' THEN 'int'
 						WHEN 'Bit' THEN 'bit'
 						ELSE 'nvarchar(255)'--default to string
-					END as FieldTypeCalculated
+					END as FieldTypeCalculated,
+					CONVERT(INT,COALESCE(NULLIF(L.Name,'null'),@DefaultStringLength)) as FieldLength
 		FROM		@vFields F
 		LEFT JOIN	@vTypes T
 			ON		T.Idx = F.Idx
+		LEFT JOIN	@vLengths L
+			ON		L.Idx = F.Idx
 
 	OPEN cField
-	FETCH NEXT FROM cField INTO @vFieldName, @vFieldType, @vFieldTypeCalculated
+	FETCH NEXT FROM cField INTO @vFieldName, @vFieldType, @vFieldTypeCalculated, @vFieldLength
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
 		SET @vSQL = 'ALTER TABLE ##tResult ADD ' + QUOTENAME(@vFieldName) + ' ' + @vFieldTypeCalculated
@@ -64,11 +71,11 @@ BEGIN
 								WHEN 'Number' THEN 'dbo.GetRandomNumber(255),'
 								WHEN 'Date' THEN 'dbo.GetRandomDate(),'
 								WHEN 'Bit' THEN 'dbo.GetRandomNumber(2),'
-								ELSE 'dbo.GetRandomString(10,0),'
+								ELSE 'dbo.GetRandomString('+ CONVERT(varchar, ABS(CHECKSUM(RAND()))%10+@vFieldLength) +', 0, 0),'
 							END
 		EXEC(@vSQL)
 	
-		FETCH NEXT FROM cField INTO @vFieldName, @vFieldType, @vFieldTypeCalculated
+		FETCH NEXT FROM cField INTO @vFieldName, @vFieldType, @vFieldTypeCalculated, @vFieldLength
 	END
 	CLOSE cField
 	DEALLOCATE cField
@@ -96,6 +103,7 @@ END
 /*
 	EXEC dbo.GetFakeJson	@Fields = 'Make,Model,Dealership,Yard,SalesPerson,Phone,WalkIn,Email,Other,Total,TestDrives,TestDrivesCount,TestDriveConversion,TestDrivePhoneConversion,TestDriveWalkInConversion,TestDriveEmailConversion,TestDriveOtherConversion,Sales,SalesConversion,SalesPhoneConversion,SalesWalkInConversion,SalesEmailConversion,SalesOtherConversion',
 							@FieldTypes = 'Number,String,String,Date,Bit,String,String,String,String,String,String,String,Date,String,String,String,String,String,Number,String,String,String,Bit',
+							--@FieldLengths = 'null,30',
 							@Debug = 1
 							
 	EXEC dbo.GetFakeJson	@Fields = 'Make,Model,Dealership,Yard,SalesPerson,Phone,WalkIn,Email,Other,Total,TestDrives,TestDrivesCount,TestDriveConversion,TestDrivePhoneConversion,TestDriveWalkInConversion,TestDriveEmailConversion,TestDriveOtherConversion,Sales,SalesConversion,SalesPhoneConversion,SalesWalkInConversion,SalesEmailConversion,SalesOtherConversion',

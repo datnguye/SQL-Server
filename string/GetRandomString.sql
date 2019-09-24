@@ -16,7 +16,7 @@ GO
 */
 DROP FUNCTION IF EXISTS GetRandomString
 GO
-CREATE FUNCTION GetRandomString	(@Length SmallInt = 40, @IncludeSpecialCharacters Bit = 0)
+CREATE FUNCTION GetRandomString	(@Length SmallInt = 40, @IncludeNumber Bit = 0, @IncludeSpecialCharacters Bit = 0)
 RETURNS varchar(512)
 AS 
 BEGIN
@@ -31,7 +31,7 @@ BEGIN
 
 	SET @vSourceLetters += @UpperCaseLetters
 	SET @vSourceLetters += @LowerCaseLetters
-	SET @vSourceLetters += @NumberLetters
+	IF @IncludeNumber = 1 SET @vSourceLetters += @NumberLetters
 	IF @IncludeSpecialCharacters = 1 SET @vSourceLetters += @SpecialLetters
 
 	SET @vSourceLettersLen = LEN(@vSourceLetters)
@@ -45,10 +45,11 @@ BEGIN
     RETURN @vResult
 END
 /*
-SELECT dbo.GetRandomString(-1 ,0)
-SELECT dbo.GetRandomString(0  ,0)
-SELECT dbo.GetRandomString(10 ,0)
-SELECT dbo.GetRandomString(512,0)
-SELECT dbo.GetRandomString(512,1) 
-SELECT dbo.GetRandomString(40 ,1) 
+SELECT dbo.GetRandomString(-1 ,0, 0)
+SELECT dbo.GetRandomString(0  ,0, 0)
+SELECT dbo.GetRandomString(10 ,0, 0)
+SELECT dbo.GetRandomString(10 ,1, 0)
+SELECT dbo.GetRandomString(512,0, 0)
+SELECT dbo.GetRandomString(512,0, 1) 
+SELECT dbo.GetRandomString(40 ,0, 1) 
 */
