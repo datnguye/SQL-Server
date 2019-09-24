@@ -1,7 +1,7 @@
 --======================================================
 -- Usage: GetFakeJson - to get fake data in json format
 -- Dependencies: 
---			Function string/GetRandomString
+--			Function string/GetRandomSentence
 --			Function utility/GetRandomNumber
 --			Function utility/GetRandomDate
 -- Notes: From SQL 2016
@@ -25,7 +25,7 @@ BEGIN
 	CREATE TABLE ##tResult (dummy BIT)
 
 	--Constants
-	DECLARE @DefaultStringLength varchar = '10'
+	DECLARE @DefaultStringLength varchar(2) = '10'
 
 	--Variables
 	DECLARE @vSQL nvarchar(max)
@@ -71,7 +71,7 @@ BEGIN
 								WHEN 'Number' THEN 'dbo.GetRandomNumber(255),'
 								WHEN 'Date' THEN 'dbo.GetRandomDate(),'
 								WHEN 'Bit' THEN 'dbo.GetRandomNumber(2),'
-								ELSE 'dbo.GetRandomString('+ CONVERT(varchar, ABS(CHECKSUM(RAND()))%10+@vFieldLength) +', 0, 0),'
+								ELSE 'LEFT(dbo.GetRandomSentence('+ CONVERT(varchar, ABS(CHECKSUM(RAND()))%5+1) +'), ' + CONVERT(varchar,@vFieldLength) + '),'
 							END
 		EXEC(@vSQL)
 	
