@@ -10,7 +10,7 @@ DROP PROCEDURE IF EXISTS MaintenanceDBSnapshot
 GO
 
 CREATE PROCEDURE MaintenanceDBSnapshot  @LiveRun BIT = 0,
-                                        --@Drop BIT = 1, --consider to use this param to drop all snapshots of current source database before creating new
+                                        @Drop BIT = 1,
                                         @SnapshotLocation varchar(256) = NULL
 AS
 BEGIN
@@ -37,7 +37,7 @@ BEGIN
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Snapshot location: ' + @vDbSnapshotPhysicalName
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
 
-    SET @vSQL = 'CREATE DATABASE [' + @vDbSnapshotName + '] ON (NAME = [' + DB_NAME() + '], FILENAME = ''' + @vDbSnapshotPhysicalName + ''') AS SNAPSHOT OF [' + DB_NAME() + ']'
+	SET @vSQL = 'CREATE DATABASE [' + @vDbSnapshotName + '] ON (NAME = [' + DB_NAME() + '], FILENAME = ''' + @vDbSnapshotPhysicalName + ''') AS SNAPSHOT OF [' + DB_NAME() + ']'
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Creating snap: ' + @vSQL
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
     IF @LiveRun = 1
@@ -53,6 +53,20 @@ BEGIN
             RETURN -1
         END
     END
+
+	IF @Drop = 1
+	BEGIN
+		SET @vSQL = ''
+		SELECT @vSQL += 'DROP DATABASE [' + S.name + '];' + char(10) + char(13)
+		FROM	sys.databases S
+		WHERE	S.source_database_id = (SELECT database_id FROM sys.databases WHERE name = DB_NAME())
+			AND S.name <> @vDbSnapshotName
+
+		SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Drop old snaps: ' + char(10) + char(13) + @vSQL
+		RAISERROR(@vMessage,0,1) WITH NOWAIT
+		EXECUTE sp_executesql @statement=@vSQL
+	END
+
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + ' Finished.'
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
 END
