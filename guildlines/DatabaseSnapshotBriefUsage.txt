@@ -1,0 +1,27 @@
+Basic view of Database Snapshots (SQL Server)
+Available from SQL 2016 SP1 or later
+Docs: https://docs.microsoft.com/en-us/sql/relational-databases/databases/database-snapshots-sql-server
+
+Where should to use:
++ Locally develop a feature: Easily revert database state from a snapshot
++ Testing environment: Useful when repeatedly running each round of testing. Restore from a snapshot that is much quick than restoring from a backup)
++ Reporting purposes: Snapshot working as a copy of source database but read-only
+
+Limitations as some:
++ Double up database size so disk space issue may occur
++ Snapshot must be remaining on the same server instance as the source database
++ Snapshot is dependent on source database. If source database is not available, all its snapshot will be not available too
++ Database cannot be dropped if any snapshots existing
+
+Usage:
++ Generate new database snapshot:
+USE your_db
+GO
+EXEC MaintenanceDBSnapshot @LiveRun = 1
+ref: https://github.com/datnguye/SQL-Server/blob/master/maintenance/MaintenanceDBSnapshot.sql
+
++ Restore snapshot to revert the source database to the time of snapshot creation:
+USE master
+GO
+EXEC MaintenanceDBRestoreFromSnapshot @DbName = 'your_db', @FromSnapshot = 'your_db-SNAPSHOT-date-time', @LiveRun = 1
+ref: https://github.com/datnguye/SQL-Server/blob/master/maintenance/MaintenanceDBRestoreFromSnapshot.sql
