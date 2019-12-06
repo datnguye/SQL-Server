@@ -37,7 +37,7 @@ BEGIN
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Snapshot location: ' + @vDbSnapshotPhysicalName
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
 
-    SET @vSQL = 'CREATE DATABASE [' + @vDbSnapshotName + '] ON (NAME = ' + DB_NAME() + ', FILENAME = ''' + @vDbSnapshotPhysicalName + ''') AS SNAPSHOT OF ' + DB_NAME()
+    SET @vSQL = 'CREATE DATABASE [' + @vDbSnapshotName + '] ON (NAME = [' + DB_NAME() + '], FILENAME = ''' + @vDbSnapshotPhysicalName + ''') AS SNAPSHOT OF [' + DB_NAME() + ']'
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Creating snap: ' + @vSQL
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
     IF @LiveRun = 1

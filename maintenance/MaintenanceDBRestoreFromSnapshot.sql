@@ -46,6 +46,8 @@ BEGIN
     END
 
     -- consider to use KillAllDatabaseProcesses to kill all active processes before restoring
+    -- EXEC KillAllDatabaseProcesses @DatabaseName = @DbName, @LiveRun = 1
+    
     SET @vSQL = 'RESTORE DATABASE [' + @DbName + '] FROM DATABASE_SNAPSHOT = ''' + @FromSnapshot + ''''
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21) + '  Restoring... - ' + @vSQL
 	RAISERROR(@vMessage,0,1) WITH NOWAIT
