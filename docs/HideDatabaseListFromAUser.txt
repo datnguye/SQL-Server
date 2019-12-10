@@ -1,0 +1,25 @@
+--1. Deny db view to public
+USE MASTER
+GO
+DENY VIEW ANY DATABASE TO PUBLIC
+GO
+--2. Create your login need stuffing (skip if existed already)
+CREATE LOGIN 'example_login' WITH PASSWORD = 'Y0ursT0on9p@@sworD'
+GO
+--3. Assign db owner to the login
+USE YOUR_DB
+GO
+EXEC sp_changedbowner 'example_login'
+GO
+--Done.
+
+--To revert what you did:
+--GRANT VIEW ANY DATABASE TO PUBLIC;
+--GO
+--USE YOUR_DB
+--GO
+--EXEC sp_changedbowner 'sa'--or whatever login you would like to
+--GO
+--USE master
+--GO
+--DROP LOGIN 'example_login'
