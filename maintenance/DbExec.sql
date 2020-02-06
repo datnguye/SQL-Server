@@ -72,6 +72,7 @@ BEGIN
 		SELECT	name
 		FROM	sys.databases 
 		WHERE	database_id > 4
+			AND state = 0
 			AND name LIKE @DbNamePattern
 
 	OPEN db_cursor
@@ -133,7 +134,7 @@ BEGIN
 	CLOSE db_cursor
 	DEALLOCATE db_cursor
 		
-	Print CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'- Finished killing processes.'
+	Print CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'- Finished processes.'
 	RETURN;
 END
 
