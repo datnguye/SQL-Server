@@ -37,7 +37,7 @@ BEGIN
 END
 GO
 /*
-	EXEC GetTableSize --get size of all tables
+	EXEC GetTableSize '%' --get size of all tables
 	EXEC GetTableSize @TableNamePattern = 'User%' --get size of tables prefixed by 'User'
 	EXEC GetTableSize @TableNamePattern = '\_%' --get size of tables prefixed by '_'
 */
