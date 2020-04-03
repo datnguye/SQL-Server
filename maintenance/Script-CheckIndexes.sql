@@ -32,7 +32,8 @@ CREATE TABLE #tempIndexesColumns
 	TableName sysname,
 	IndexName sysname,
 	IndexType sysname,
-	ColumnName sysname
+	ColumnName sysname,
+	IsInInclude sysname
 )
 
 EXEC master..DbExec '
@@ -42,7 +43,8 @@ SELECT	DB_NAME(),
 		TableName = t.name,
 		IndexName = ind.name,
 		IndexType = ind.type_desc,
-		ColumnName = UPPER(col.name)
+		ColumnName = UPPER(col.name),
+		IsInInclude = ic.is_included_column
 FROM	sys.indexes ind 
 JOIN	sys.index_columns ic
 	ON  ind.object_id = ic.object_id
@@ -92,12 +94,12 @@ SELECT	'All Data', *
 FROM	#tempIndexesUsages
 
 --1
-SELECT	'Review to remove/or not for zero no. of seeks/scan/lookup but large updates' as Item,* 
+SELECT	'Review to remove/or not' as Item,* 
 FROM	#tempIndexesUsages
 WHERE	NumOfLookups = 0
 	AND NumOfScans = 0
 	AND NumOfSeeks = 0
-	AND NumOfUpdates > 0
+	AND NumOfUpdates > 1000
 	AND IndexType = 'NONCLUSTERED'
 
 --2
@@ -117,10 +119,24 @@ SELECT	DISTINCT
 					AND		B.TableName = A.TableName
 					AND		B.IndexName = A.IndexName
 					AND		B.IndexType = A.IndexType
+					AND		B.IsInInclude = 0
 				ORDER BY	B.ColumnName
 				FOR XML PATH('')
             ), 1, 1, ''
-		) as ColumnNames
+		) as ColumnNames,
+		STUFF(
+			(
+				SELECT		',' + B.ColumnName
+				FROM		#tempIndexesColumns B
+				WHERE		B.DBName = A.DBName
+					AND		B.TableName = A.TableName
+					AND		B.IndexName = A.IndexName
+					AND		B.IndexType = A.IndexType
+					AND		B.IsInInclude = 1
+				ORDER BY	B.ColumnName
+				FOR XML PATH('')
+            ), 1, 1, ''
+		) as IncludedColumnNames
 INTO	#tempIndexesColumnsC
 FROM	#tempIndexesColumns A
 
@@ -130,6 +146,7 @@ JOIN	#tempIndexesColumnsC B
 	ON	B.DBName = A.DBName
 	AND B.TableName = A.TableName
 	AND B.ColumnNames = A.ColumnNames
+	AND B.IncludedColumnNames = A.IncludedColumnNames
 	AND B.IndexName <> A.IndexName
 JOIN	#tempIndexesUsages C
 	ON	C.DBName = A.DBName
