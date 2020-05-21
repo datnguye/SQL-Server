@@ -24,7 +24,7 @@ AS
 BEGIN
     DECLARE @vWin int --token of WinHttp object
     DECLARE @vReturnCode int 
-    DECLARE @vResponse nvarchar(max)
+    DECLARE @vResponse varchar(8000)
     DECLARE @vPropertyName varchar(128)
 
 	SET @Url = Replace(@Url,'%20',' ')
@@ -60,4 +60,5 @@ BEGIN
 END
 /*
 select dbo.GetHttpRequest('http://example.com/',0)
+select dbo.GetHttpRequest('http://dummy.restapiexample.com/api/v1/employees',0)
 */
