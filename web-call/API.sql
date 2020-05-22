@@ -1,5 +1,5 @@
 --======================================================
--- Usage: ApiCall (supported methods: GET,...)
+-- Usage: API (supported methods: GET,...)
 -- Notes: 
 -- Dependencies: Required to enable 'show advanced options' and 'Ole Automation Procedures'
 --	sp_configure 'show advanced options', 1;
@@ -15,9 +15,9 @@
 -- Date			Author		Description
 -- 2020-05-21	DN		Intial
 --======================================================
-DROP PROCEDURE IF EXISTS ApiCall
+DROP PROCEDURE IF EXISTS API
 GO
-CREATE PROCEDURE ApiCall	@Url varchar(8000), 
+CREATE PROCEDURE API	@Url varchar(8000), 
 							@Method varchar(10) = 'GET'
 AS
 BEGIN
@@ -60,6 +60,6 @@ BEGIN
 	RETURN
 END
 /*
-EXEC dbo.ApiCall 'http://example.com/'
-EXEC dbo.ApiCall 'http://dummy.restapiexample.com/api/v1/employees'
+EXEC API 'http://example.com/'
+EXEC API 'http://dummy.restapiexample.com/api/v1/employees'
 */
