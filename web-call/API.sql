@@ -116,4 +116,26 @@ END
 /*
 EXEC API @Url = 'http://example.com/'
 EXEC API @Method = 'GET', @Url = 'http://dummy.restapiexample.com/api/v1/employees'
+
+Send Grid Email:
+EXEC API @Method = 'POST', 
+@Url = 'https://api.sendgrid.com/v3/mail/send',
+@Authorization = 'Bearer your-api-key',
+@ContentType = 'application/json',
+@BodyData = '{
+  "personalizations": [
+    {
+      "to": [
+        {
+          "email": "your-email@domain"
+        }
+      ],
+    }
+  ],
+  "from": {
+    "email": "noreply@domain",
+    "name": "No Reply"
+  },
+  "template_id": "your-template_id"
+}'
 */
