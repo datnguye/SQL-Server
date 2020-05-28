@@ -75,10 +75,6 @@ BEGIN
 	EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText'
     IF @vReturnCode <> 0 GOTO EXCEPTION
 
-	--Dispose objects 
-    EXEC @vReturnCode = sp_OADestroy @vWin 
-    IF @vReturnCode <> 0 GOTO EXCEPTION
-
 	IF @vReturnCode = 0 
 		GOTO RESULT
 
@@ -106,8 +102,13 @@ BEGIN
 					) AS ResponseText
 		END
 
-	--RESULT
+	--FINALLY
 	RESULT:
+	--Dispose objects 
+	IF @vWin IS NOT NULL
+		EXEC sp_OADestroy @vWin
+
+	--Result
     SELECT	* 
 	FROM	@tResponse
 
