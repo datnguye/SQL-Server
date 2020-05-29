@@ -23,6 +23,11 @@ BEGIN
 	
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'-	Starting installing python module: ' + @Module
 	RAISERROR(@vMessage,0,1)
+	EXECUTE sp_execute_external_script @language = N'Python'
+    , @script = N'
+import sys
+import pandas
+print(sys.version)'
 
 	--Required options enabled
 	DECLARE @vXpCmdShellInfo TABLE (name sysname, minimum int, maximum int, config_value int, run_value int)
@@ -141,8 +146,7 @@ EXECUTE sp_execute_external_script @language = N'Python'
 import pkg_resources
 import pandas
 dists = [str(d) for d in pkg_resources.working_set]
-OutputDataSet = pandas.DataFrame(dists)
-'
+OutputDataSet = pandas.DataFrame(dists)'
 WITH RESULT SETS(([Package] NVARCHAR(max)))
 GO
 
