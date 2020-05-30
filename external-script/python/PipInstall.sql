@@ -20,13 +20,6 @@ BEGIN
 	DECLARE @vPackageInstalled TABLE (PackageName nvarchar(255))
 	DECLARE @vPythonServicePath nvarchar(255)
 	DECLARE @vPackageName nvarchar(255)
-	
-	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'-	Starting installing python module: ' + @Module
-	RAISERROR(@vMessage,0,1)
-	EXECUTE sp_execute_external_script @language = N'Python'
-    , @script = N'
-import sys
-print(sys.version)'
 
 	--Required options enabled
 	DECLARE @vXpCmdShellInfo TABLE (name sysname, minimum int, maximum int, config_value int, run_value int)
@@ -48,8 +41,16 @@ print(sys.version)'
 
 		RETURN -1;
 	END
+
+	--Printing python version	
+	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'-	Starting installing python module: ' + @Module
+	RAISERROR(@vMessage,0,1)
+	EXECUTE sp_execute_external_script @language = N'Python'
+    , @script = N'
+import sys
+print(sys.version)'
 	
-	--Getting SQL Server - PYTHON_SERVICES path
+	--Getting SQL Server's PYTHON_SERVICES path
 	INSERT
 	INTO	@vSystemPath
 	EXECUTE sp_execute_external_script 
@@ -130,7 +131,9 @@ GO
 */
 
 /*
-
+EXEC sp_configure 'external scripts enabled', 1
+RECONFIGURE
+GO
 EXECUTE sp_execute_external_script 
 	@language =N'Python', 
 	@script=N'
