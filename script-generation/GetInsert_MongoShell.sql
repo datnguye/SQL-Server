@@ -24,5 +24,3 @@ EXEC GetInsert_MongoShell
 	@TableName='ApiCovid19Route',
 	@Where=''
 */
-
-
