@@ -1,6 +1,11 @@
-/*
-
-*/
+--======================================================
+-- Usage: ApiCovid19
+-- Notes: Practical exercise of API.sql
+--		CAUTION!! This is scripted inside with real tables DROP and CREATE
+-- History:
+-- Date			Author		Description
+-- 2020-06-11	DN			Intial
+--======================================================
 DROP PROCEDURE IF EXISTS [dbo].ApiCovid19
 GO
 CREATE PROCEDURE [dbo].ApiCovid19	@Url varchar(8000) = 'https://api.covid19api.com', 
@@ -195,6 +200,7 @@ BEGIN
 	WITH	(Country nvarchar(255)	N'$.Country', Slug nvarchar(255) N'$.Slug', ISO2 varchar(2) N'$.ISO2')
 
 	--Crawling countryDayOneRoute	
+	DECLARE @vCountry nvarchar(255)
 	DROP TABLE IF EXISTS ApiCovid19CountryDayOne
 	CREATE TABLE ApiCovid19CountryDayOne
 	(
@@ -211,31 +217,56 @@ BEGIN
 		Active decimal(17,2),
 		Date DateTime
 	)
+	Declare c CURSOR FOR
+		SELECT		Slug
+		FROM		ApiCovid19Countries
+		ORDER BY	1 
+	OPEN c
+	FETCH NEXT FROM c INTO @vCountry
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			SELECT	TOP 1 @vRoute = @Url + LEFT(Path, CHARINDEX(':',Path,1)-1) + @vCountry
+			FROM	ApiCovid19Route
+			WHERE	RouteName = 'countryDayOneRoute'
+			PRINT 'GET ' + @vRoute
 
-	SELECT	TOP 1 @vRoute = @Url + LEFT(Path, CHARINDEX(':',Path,1)-1) + 'vietnam' 
-	FROM	ApiCovid19Route
-	WHERE	RouteName = 'countryDayOneRoute'
-	PRINT 'GET ' + @vRoute
+			EXEC @vReturnCode = sp_OAMethod @vWin, 'Open', NULL, @Method/*Method*/, @vRoute /*Url*/, 'false' /*IsAsync*/
+			IF @vReturnCode <> 0 GOTO EXCEPTION
+			EXEC @vReturnCode = sp_OAMethod @vWin, 'SetRequestHeader', NULL, 'Content-Type', @ContentType
+			IF @vReturnCode <> 0 GOTO EXCEPTION
+			EXEC @vReturnCode = sp_OAMethod @vWin,'Send'
+			IF @vReturnCode <> 0 GOTO EXCEPTION
+			DELETE FROM @tResponse
+			INSERT INTO @tResponse (ResponseText) 
+			EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText'
+			IF @vReturnCode <> 0 GOTO EXCEPTION
+			SELECT	@vResponse = ResponseText
+			FROM	@tResponse
 
-    EXEC @vReturnCode = sp_OAMethod @vWin, 'Open', NULL, @Method/*Method*/, @vRoute /*Url*/, 'false' /*IsAsync*/
-    IF @vReturnCode <> 0 GOTO EXCEPTION
-	EXEC @vReturnCode = sp_OAMethod @vWin, 'SetRequestHeader', NULL, 'Content-Type', @ContentType
-	IF @vReturnCode <> 0 GOTO EXCEPTION
-	EXEC @vReturnCode = sp_OAMethod @vWin,'Send'
-	IF @vReturnCode <> 0 GOTO EXCEPTION
-	DELETE FROM @tResponse
-	INSERT INTO @tResponse (ResponseText) 
-	EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText'
-    IF @vReturnCode <> 0 GOTO EXCEPTION
-	SELECT	@vResponse = ResponseText
-	FROM	@tResponse
+			INSERT
+			INTO	ApiCovid19CountryDayOne
+		    SELECT	Country,CountryCode,Province,City,CityCode,Lat,Lon,Confirmed,Deaths,Recovered,Active,Date
+			FROM	OPENJSON(@vResponse)
+			WITH	(
+						Country nvarchar(255)		N'$.Country',
+						CountryCode varchar(10)		N'$.CountryCode',
+						Province nvarchar(255)		N'$.Province',
+						City nvarchar(255)			N'$.City',
+						CityCode nvarchar(255)		N'$.CityCode',
+						Lat decimal(10,7)			N'$.Lat',
+						Lon decimal(10,7)			N'$.Lon',
+						Confirmed decimal(17,2)		N'$.Confirmed',
+						Deaths decimal(17,2)		N'$.Deaths',
+						Recovered decimal(17,2)		N'$.Recovered',
+						Active decimal(17,2)		N'$.Active',
+						Date DateTime				N'$.Date'
+					)
 
-	--INSERT
-	--INTO	ApiCovid19CountryDayOne
- --   SELECT	Country,Slug,ISO2
-	--FROM	OPENJSON(@vResponse)
-	SELECT @vResponse
 
+			FETCH NEXT FROM c INTO @vCountry
+		END
+	CLOSE c
+	DEALLOCATE c 
 
 	--Dispose objects 
 	IF @vWin IS NOT NULL
