@@ -268,19 +268,88 @@ BEGIN
 	CLOSE c
 	DEALLOCATE c 
 
+	--Crawling summaryRoute	
+	DROP TABLE IF EXISTS ApiCovid19Summary
+	CREATE TABLE ApiCovid19Summary
+	(
+		Country nvarchar(255),
+		CountryCode varchar(2),
+		Slug nvarchar(255),
+		NewConfirmed INT,
+		TotalConfirmed INT,
+		NewDeaths INT,
+		TotalDeaths INT,
+		NewRecovered INT,
+		TotalRecovered INT,
+		Date DATETIME
+	)
+
+	SET @vRoute = ''
+	SELECT	@vRoute = @Url + Path 
+	FROM	ApiCovid19Route
+	WHERE	RouteName = 'summaryRoute'
+	PRINT 'GET ' + @vRoute
+
+    EXEC @vReturnCode = sp_OAMethod @vWin, 'Open', NULL, @Method/*Method*/, @vRoute /*Url*/, 'false' /*IsAsync*/
+    IF @vReturnCode <> 0 GOTO EXCEPTION
+	EXEC @vReturnCode = sp_OAMethod @vWin, 'SetRequestHeader', NULL, 'Content-Type', @ContentType
+	IF @vReturnCode <> 0 GOTO EXCEPTION
+	EXEC @vReturnCode = sp_OAMethod @vWin,'Send'
+	IF @vReturnCode <> 0 GOTO EXCEPTION
+	DELETE FROM @tResponse
+	INSERT INTO @tResponse (ResponseText) 
+	EXEC @vReturnCode = sp_OAGetProperty @vWin,'ResponseText'
+    IF @vReturnCode <> 0 GOTO EXCEPTION
+	SELECT	@vResponse = ResponseText
+	FROM	@tResponse
+
+	INSERT
+	INTO	ApiCovid19Summary
+    SELECT	'Global' as Country,NULL as CountryCode, NULL as Slug,NewConfirmed,TotalConfirmed,NewDeaths,TotalDeaths,NewRecovered,TotalRecovered,Date
+	FROM	OPENJSON(@vResponse)
+	WITH	(
+				NewConfirmed INT		N'$.Global.NewConfirmed',
+				TotalConfirmed INT		N'$.Global.TotalConfirmed',
+				NewDeaths INT			N'$.Global.NewDeaths',
+				TotalDeaths INT			N'$.Global.TotalDeaths',
+				NewRecovered INT		N'$.Global.NewRecovered',
+				TotalRecovered INT		N'$.Global.TotalRecovered',
+				Date DATETIME			N'$.Global.Date'
+			)
+	UNION ALL
+    SELECT	Country,CountryCode,Slug,NewConfirmed,TotalConfirmed,NewDeaths,TotalDeaths,NewRecovered,TotalRecovered,Date
+	FROM	OPENJSON(@vResponse)
+	WITH	(
+				CountryJson nvarchar(max)	N'$.Countries' AS JSON
+			) as C
+	CROSS APPLY OPENJSON (C.CountryJson)
+	WITH	(
+				Country nvarchar(255)	N'$.Country',
+				CountryCode varchar(2)	N'$.CountryCode',
+				Slug nvarchar(255)		N'$.Slug',
+				NewConfirmed INT		N'$.NewConfirmed',
+				TotalConfirmed INT		N'$.TotalConfirmed',
+				NewDeaths INT			N'$.NewDeaths',
+				TotalDeaths INT			N'$.TotalDeaths',
+				NewRecovered INT		N'$.NewRecovered',
+				TotalRecovered INT		N'$.TotalRecovered',
+				Date DATETIME			N'$.Date'
+			) as CD
+
 	--Dispose objects 
 	IF @vWin IS NOT NULL
 		EXEC sp_OADestroy @vWin
 
 	RETURN
 END
+GO
 /*
 EXEC ApiCovid19
 
 SELECT * FROM ApiCovid19Route
 SELECT * FROM ApiCovid19Countries
-SELECT * FROM ApiCovid19CountryDayOne
+SELECT TOP 100 * FROM ApiCovid19CountryDayOne ORDER BY DATE DESC
+SELECT * FROM ApiCovid19Summary ORDER BY DATE DESC
 */
-GO
 
 
