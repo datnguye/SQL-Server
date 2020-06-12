@@ -47,12 +47,12 @@ BEGIN
 	SET @vCommand = '
 	DECLARE @vJsonData nvarchar(max)
 	SELECT @vJsonData = (
-		SELECT		TOP (@Top) *
+		SELECT		' + CASE WHEN @Top IS NOT NULL THEN 'TOP (@Top)' ELSE '' END + ' *
 		FROM		<schema>.<table>
 		<where>
 		FOR JSON AUTO
 	)
-	INSERT INTO ##tJsonData SELECT ''db.createCollection("<collection>");db.<collection>.remove({});db.<collection>.insert('' + @vJsonData + '')'''
+	INSERT INTO ##tJsonData SELECT N''db.createCollection("<collection>");db.<collection>.remove({});db.<collection>.insert('' + @vJsonData + '')'''
 
 	SET @vCommand = REPLACE(@vCommand, '<schema>', @TableSchema)
 	SET @vCommand = REPLACE(@vCommand, '<table>', @TableName)
@@ -68,7 +68,7 @@ BEGIN
 	--Export to js file using sqlcmd
 	IF @ExportPath IS NOT NULL
 	BEGIN
-		SET @vCommand = 'bcp "SELECT InsertScript FROM ##tJsonData" QUERYOUT "' + @vExportPath + '" -T -w -S "' + COALESCE(@ExportOverrideServerInstance, @@SERVERNAME) + '"'
+		SET @vCommand = 'bcp "SELECT InsertScript FROM ##tJsonData" QUERYOUT "' + @vExportPath + '" -T -c -C65001 -S "' + COALESCE(@ExportOverrideServerInstance, @@SERVERNAME) + '"'
 		RAISERROR(@vCommand,0,1) WITH NOWAIT
 		EXEC @vReturnCode = xp_cmdshell @vCommand, no_output
 		IF @vReturnCode <> 0
@@ -76,6 +76,17 @@ BEGIN
 			RAISERROR('Exporting has been failed',16,1) WITH NOWAIT
 			RETURN -1
 		END
+
+		--
+		SET @vCommand = '	mongo mongodb://127.0.0.1:27017/Covid19 -u admin -p admin --eval "load(''' + REPLACE(@vExportPath, '\','/') + ''')"'
+		RAISERROR('Sample mongo shell:',0,1) WITH NOWAIT
+		RAISERROR(@vCommand,0,1) WITH NOWAIT
+		RAISERROR('OPTIONS:',0,1) WITH NOWAIT
+		RAISERROR('	127.0.0.1: Mongo server IP address',0,1) WITH NOWAIT
+		RAISERROR('	27017: Mongo server port',0,1) WITH NOWAIT
+		RAISERROR('	Covid19: Database name',0,1) WITH NOWAIT
+		RAISERROR('	-u admin: Specify user login',0,1) WITH NOWAIT
+		RAISERROR('	-p admin: Specify user password',0,1) WITH NOWAIT
 	END
 	ELSE 
 	BEGIN
