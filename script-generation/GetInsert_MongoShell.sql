@@ -103,6 +103,7 @@ EXEC GetInsert_MongoShell	@TableName='ApiCovid19Route'
 EXEC GetInsert_MongoShell	@TableName='ApiCovid19CountryDayOne', @Top = 10, @Where = 'CountryCode = ''vn'''
 EXEC GetInsert_MongoShell	@TableName='ApiCovid19Route'
 
+EXEC ApiCovid19 
 EXEC GetInsert_MongoShell	@TableName='ApiCovid19Route', @ExportPath = 'C:\Temp\'
 EXEC GetInsert_MongoShell	@TableName='ApiCovid19Countries', @ExportPath = 'C:\Temp\'
 EXEC GetInsert_MongoShell	@TableName='ApiCovid19CountryDayOne', @ExportPath = 'C:\Temp\'
