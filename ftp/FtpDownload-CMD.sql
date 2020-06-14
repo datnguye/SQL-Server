@@ -1,5 +1,5 @@
 --======================================================
--- Usage: FtpDownload
+-- Usage: FtpDownload using native cmd shell
 -- Notes: xp_cmdshell needs enabling
 --		EXEC sp_configure 'xp_cmdshell', 1
 --		RECONFIGURE;

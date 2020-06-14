@@ -1,5 +1,5 @@
 --======================================================
--- Usage: FtpDownload
+-- Usage: FtpDownload using WinSCP
 -- Notes: xp_cmdshell needs enabling
 --		EXEC sp_configure 'xp_cmdshell', 1
 --		RECONFIGURE;

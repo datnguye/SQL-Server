@@ -1,8 +1,6 @@
 --======================================================
--- Usage: FtpDownload
--- Notes: xp_cmdshell needs enabling
---		EXEC sp_configure 'xp_cmdshell', 1
---		RECONFIGURE;
+-- Usage: FtpDownload using Python code
+-- Notes: 
 -- Parameters:
 -- History:
 -- Date			Author		Description
@@ -43,18 +41,10 @@ BEGIN
 	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'		Log: ' + @LogFileName
 	RAISERROR(@vMessage,0,1)
 
-	SET @vCommand = LEFT(@LocalFolder,2) + 
-					' & cd "' + @LocalFolder + '"' + 
-					' & "' + @WinSCPFolder + 'WinSCP.com" /log="' + @LogFileName + '" /command ' + 
-					'"open ftp://' + @FtpUser + ':' + @FtpPassword + '@' + @FtpHost + '" ' + 
-					'"get ""' + @FtpFolder + '*"" -filemask=' + @FtpFileMask + '" "exit"'
+	SET @vCommand = 'TO BE UPDATED'
 
 	EXEC @vReturnCode = master..xp_cmdshell @vCommand, no_output
-	
-	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'		Command used: '
-	RAISERROR(@vMessage,0,1)
-	SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'			' + @vCommand
-	RAISERROR(@vMessage,0,1)
+
 	IF @vReturnCode <> 0
 	BEGIN
 		SET @vMessage = CONVERT(nvarchar,CURRENT_TIMESTAMP,21)+'		Something wrong happened. Please help to review log: ' + @LogFileName
@@ -71,12 +61,6 @@ END
 GO
 /*
 	EXEC dbo.FtpDownload	@FtpHost='localhost', @FtpUser='ftpuser', @FtpPassword='ftpuser',
-							@FtpFolder = '/', @LocalFolder = 'C:\Temp'
-
-	EXEC dbo.FtpDownload	@FtpHost='localhost', @FtpUser='ftpuser', @FtpPassword='ftpuser', @FtpFileMask = '*-20200614-090721.sql',
-							@FtpFolder = '/', @LocalFolder = 'C:\Temp'
-
-	EXEC dbo.FtpDownload	@FtpHost='localhost', @FtpUser='ftpuser', @FtpPassword='ftpuser', @FtpFileMask = 'Countries-20200614-090721.sql',
 							@FtpFolder = '/', @LocalFolder = 'C:\Temp'
 */
 
