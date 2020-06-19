@@ -31,6 +31,7 @@ BEGIN
     DECLARE @vReturnCode int 
     DECLARE @tResponse TABLE (ResponseText nvarchar(4000)) 
 
+	-- NOTE: Maximum 256 instances. NO MORE!. Ref: https://docs.microsoft.com/en-us/windows/win32/wmisdk/creating-an-instance
     EXEC @vReturnCode = sp_OACreate 'WinHttp.WinHttpRequest.5.1',@vWin OUT
     IF @vReturnCode <> 0 GOTO EXCEPTION
 
