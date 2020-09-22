@@ -2,9 +2,7 @@
 -- Usage: GetObjectDependencies 
 -- Notes: 
 -- Parameters:
--- 1. CREATE TABLE #tObjectInfo (objid int NOT NULL, objtype smallint NOT NULL)
---    contains source objects
--- 2. @FindRef defines ordering
+-- @FindRef defines ordering
 --    1 order for drop
 --    0 order for script
 -- History:
@@ -13,7 +11,11 @@
 --======================================================
 DROP PROCEDURE IF EXISTS [GetObjectDependencies]
 GO
-CREATE PROCEDURE [dbo].[GetObjectDependencies]	@ObjectName varchar(255), @ObjectSchema varchar(255) = 'dbo', @FindRef BIT = 0, @FilterCurrentDBOnly BIT = 1
+CREATE PROCEDURE [dbo].[GetObjectDependencies]	@ObjectName varchar(255), 
+												@ObjectSchema varchar(255) = 'dbo', 
+												@RefType INT = 1,
+												@FindRef BIT = 0, 
+												@FilterCurrentDBOnly BIT = 1
 AS
 BEGIN
 	SET NOCOUNT ON
@@ -23,7 +25,6 @@ BEGIN
 	
 	INSERT
 	INTO	#tObjectInfo 
-	--For stored procedure
 	SELECT	sp.object_id AS [ID],
 			sp.name AS [Name],
 			SCHEMA_NAME(sp.schema_id) AS [Schema],
@@ -33,7 +34,42 @@ BEGIN
 	WHERE	(sp.type = 'P' OR sp.type = 'RF' OR sp.type='PC')
 		AND	sp.name = @ObjectName 
 		AND SCHEMA_NAME(sp.schema_id) = @ObjectSchema
-	--For xyz
+		AND @RefType = 4 --Stored Procedure
+
+	UNION ALL
+	SELECT	udf.object_id AS [ID],
+			udf.name AS [Name],
+			SCHEMA_NAME(udf.schema_id) AS [Schema],
+			db_name(),
+			0 as objtype
+	FROM	sys.all_objects AS udf
+	WHERE	udf.type in ('TF', 'FN', 'IF', 'FS', 'FT')
+		AND udf.name=@ObjectName 
+		AND SCHEMA_NAME(udf.schema_id) = @ObjectSchema
+		AND @RefType = 0 --Function
+
+	UNION ALL
+	SELECT	tbl.object_id AS [ID],
+			tbl.name AS [Name],
+			SCHEMA_NAME(tbl.schema_id) AS [Schema],
+			db_name(),
+			3 as objtype
+	FROM	sys.tables AS tbl
+	WHERE	tbl.name = @ObjectName 
+		AND SCHEMA_NAME(tbl.schema_id) = @ObjectSchema
+		AND @RefType = 3 --Table
+
+	UNION ALL
+	SELECT	v.object_id AS [ID],
+			v.name AS [Name],
+			SCHEMA_NAME(v.schema_id) AS [Schema],
+			db_name(),
+			2
+	FROM	sys.all_views AS v
+	WHERE	v.type = 'V'
+		AND v.name = @ObjectName 
+		AND SCHEMA_NAME(v.schema_id) = @ObjectSchema
+		AND @RefType = 2 --View
 
 	DECLARE @u int
 	DECLARE @udf int
@@ -919,6 +955,8 @@ BEGIN
 	RETURN
 END
 /*
-	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_ReloadILI_FromERPPRD'
-	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_ReloadILI_FromERPPRD', @FindRef=1
+	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_ReloadILI_FromERPPRD', @RefType=4
+	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_GetExchangeRate', @RefType=0
+	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_ILI', @RefType=3
+	EXEC [dbo].[GetObjectDependencies]	@ObjectName='INV_ILIV', @RefType=2
 */
