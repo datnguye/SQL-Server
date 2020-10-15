@@ -26,9 +26,10 @@ BEGIN
 	FROM	sys.all_objects AS sp
 	WHERE	(sp.type = 'P' OR sp.type = 'RF' OR sp.type='PC')
 		AND	SCHEMA_NAME(sp.schema_id) = @Schema
-		AND sp.name  NOT IN ('GetGRANT')
 		AND PATINDEX('%EXECUTE%',@Grants) > 0
 		AND PATINDEX(@ObjectPattern,sp.name) > 0
+		--exclude itself
+		AND FORMATMESSAGE('[%s].[%s]',OBJECT_SCHEMA_NAME(@@PROCID),OBJECT_NAME(@@PROCID)) <> FORMATMESSAGE('[%s].[%s]',SCHEMA_NAME(sp.schema_id),OBJECT_NAME(sp.object_id))
 	UNION ALL
 
 	--Function
