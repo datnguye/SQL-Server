@@ -10,7 +10,8 @@ GO
 --=======================================================================================================
 CREATE PROCEDURE GetGRANT	@To sysname,
 							@Schema sysname = 'dbo',
-							@Grants varchar(255) = 'SELECT,INSERT,UPDATE,DELETE,EXECUTE'
+							@Grants varchar(255) = 'SELECT,INSERT,UPDATE,DELETE,EXECUTE',
+							@ObjectPattern varchar(255) = '%'
 AS
 BEGIN
 	SET NOCOUNT ON;
@@ -27,6 +28,7 @@ BEGIN
 		AND	SCHEMA_NAME(sp.schema_id) = @Schema
 		AND sp.name  NOT IN ('GetGRANT')
 		AND PATINDEX('%EXECUTE%',@Grants) > 0
+		AND PATINDEX(@ObjectPattern,sp.name) > 0
 	UNION ALL
 
 	--Function
@@ -40,6 +42,7 @@ BEGIN
 	WHERE	udf.type in ('FN', 'IF', 'FS')
 		AND	SCHEMA_NAME(udf.schema_id) = @Schema
 		AND PATINDEX('%EXECUTE%',@Grants) > 0
+		AND PATINDEX(@ObjectPattern,udf.name) > 0
 	UNION ALL
 	--Function (Table)
 	SELECT	udf.object_id AS [ID],
@@ -52,6 +55,7 @@ BEGIN
 	WHERE	udf.type in ('TF', 'FT')
 		AND	SCHEMA_NAME(udf.schema_id) = @Schema
 		AND PATINDEX('%SELECT%',@Grants) > 0
+		AND PATINDEX(@ObjectPattern,udf.name) > 0
 	UNION ALL
 
 	--Table
@@ -69,6 +73,7 @@ BEGIN
 				OR PATINDEX('%UPDATE%',@Grants) > 0
 				OR PATINDEX('%DELETE%',@Grants) > 0
 			)
+		AND PATINDEX(@ObjectPattern,tbl.name) > 0
 	UNION ALL
 
 	--View
@@ -82,6 +87,7 @@ BEGIN
 	WHERE	v.type = 'V'
 		AND	SCHEMA_NAME(v.schema_id) = @Schema
 		AND PATINDEX('%SELECT%',@Grants) > 0
+		AND PATINDEX(@ObjectPattern,v.name) > 0
 
 	RETURN
 END
