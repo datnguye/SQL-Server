@@ -23,29 +23,27 @@ BEGIN
 	IF @SourceDatabase IS NULL SET @SourceDatabase = DB_NAME()
 	IF @DestinationDatabase IS NULL SET @DestinationDatabase = DB_NAME()
 
-	DROP TABLE IF EXISTS #tSSchema 
-	DROP TABLE IF EXISTS #tDSchema 
-	CREATE TABLE #tSSchema (Name sysname, DataType sysname, MaxLength int, Precision int, Scale int, IsNullable bit)
-	CREATE TABLE #tDSchema (Name sysname, DataType sysname, MaxLength int, Precision int, Scale int, IsNullable bit)
+	DECLARE @tSSchema TABLE (Name sysname, DataType sysname, MaxLength int, Precision int, Scale int, IsNullable bit)
+	DECLARE @tDSchema TABLE (Name sysname, DataType sysname, MaxLength int, Precision int, Scale int, IsNullable bit)
 
 	SET @vSQL = FORMATMESSAGE(N'SELECT name,TYPE_NAME(user_type_id) as data_type, max_length, precision, scale, is_nullable FROM %s.sys.columns WHERE Object_ID = OBJECT_ID(''%s.%s.%s'')', @SourceDatabase,@SourceDatabase, @SourceSchema, @SourceTable)
-	INSERT INTO #tSSchema EXEC sp_executesql @vSQL
+	INSERT INTO @tSSchema EXEC sp_executesql @vSQL
 
 	SET @vSQL = FORMATMESSAGE(N'SELECT name,TYPE_NAME(user_type_id) as data_type, max_length, precision, scale, is_nullable FROM %s.sys.columns WHERE Object_ID = OBJECT_ID(''%s.%s.%s'')', @DestinationDatabase,@DestinationDatabase, @DestinationSchema, @DestinationTable)
-	INSERT INTO #tDSchema EXEC sp_executesql @vSQL
+	INSERT INTO @tDSchema EXEC sp_executesql @vSQL
 
 	--RESULT
 	SELECT	FORMATMESSAGE(N'%s column''s data type is differred in %s.%s.%s table comparing to the source one', D.Name, @DestinationDatabase, @DestinationSchema, @DestinationTable) as Messages, 
 			D.Name as ColumnName
-	FROM	#tSSchema S
-	JOIN	#tDSchema D 
+	FROM	@tSSchema S
+	JOIN	@tDSchema D 
 		ON	S.Name = D.Name
 	WHERE	S.DataType <> D.DataType	
 	UNION ALL
 	SELECT	FORMATMESSAGE(N'String binary could be truncated in %s column of %s.%s.%s table comparing to the source one', D.Name, @DestinationDatabase, @DestinationSchema, @DestinationTable) as Messages, 
 			D.Name as ColumnName
-	FROM	#tSSchema S
-	JOIN	#tDSchema D 
+	FROM	@tSSchema S
+	JOIN	@tDSchema D 
 		ON	S.Name = D.Name
 	WHERE	S.DataType = D.DataType
 		AND S.MaxLength < D.MaxLength
