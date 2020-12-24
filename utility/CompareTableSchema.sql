@@ -40,22 +40,22 @@ BEGIN
 		ON	S.Name = D.Name
 	WHERE	S.DataType <> D.DataType	
 	UNION ALL
-	SELECT	FORMATMESSAGE(N'String binary could be truncated in %s column of %s.%s.%s table comparing to the source one', D.Name, @DestinationDatabase, @DestinationSchema, @DestinationTable) as Messages, 
+	SELECT	FORMATMESSAGE(N'String binary could be truncated in %s column (lenght = %d, expected = %d) of %s.%s.%s table comparing to the source one', D.Name, D.MaxLength, S.MaxLength, @DestinationDatabase, @DestinationSchema, @DestinationTable) as Messages, 
 			D.Name as ColumnName
 	FROM	@tSSchema S
 	JOIN	@tDSchema D 
 		ON	S.Name = D.Name
 	WHERE	S.DataType = D.DataType
-		AND S.MaxLength < D.MaxLength
+		AND D.MaxLength < S.MaxLength
 	RETURN
 END
 /*
 	Use M1Master
 	DROP TABLE IF EXISTS #tSource
-	CREATE TABLE #tSource (FirstName varchar(255), LastName nvarchar(250))
+	CREATE TABLE #tSource (FirstName varchar(255), LastName nvarchar(255))
 
 	DROP TABLE IF EXISTS Destination
-	CREATE TABLE Destination (FirstName nvarchar(255), LastName nvarchar(255))
+	CREATE TABLE Destination (FirstName nvarchar(255), LastName nvarchar(250))
 
 	EXEC [dbo].[CompareTableSchema]	@SourceDatabase = 'tempdb', @SourceTable = '#tSource',
 									@DestinationDatabase = 'M1Master', @DestinationTable = 'Destination'
