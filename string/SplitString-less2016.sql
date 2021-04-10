@@ -52,7 +52,8 @@ AS
 				ISNULL(NULLIF(CHARINDEX(@Delimiter,@Text,s.N1),0)-s.N1,8000)  
 		FROM	cteStart s  
 	)  
-	SELECT	SUBSTRING(@Text, l.N1, l.L1) [Value]  
+	SELECT	SUBSTRING(@Text, l.N1, l.L1) [Value],
+			ROW_NUMBER() OVER (ORDER BY l.N1) as Idx
 	FROM	cteLen l  
 	WHERE	SUBSTRING(@Text, l.N1, l.L1) != ''  
 GO
